@@ -89,38 +89,21 @@ netdevice-manager/
 
 ---
 
-## 🚦 Hướng dẫn khởi chạy nhanh (Quickstart)
+## 🚦 Hướng dẫn khởi chạy nhanh bằng Script (.bat)
 
-### 1. Khởi chạy Server (FastAPI + SQLite)
-Yêu cầu Python 3.8+ cài đặt sẵn trên máy chủ.
-```bash
-cd server
-python -m venv venv
-# Windows (CMD):
-venv\Scripts\activate
-# Windows (PowerShell):
-.\venv\Scripts\activate
+Hệ thống đã được trang bị sẵn các tệp kịch bản lệnh `.bat` chạy tự động chỉ bằng 1 cú nhấp chuột tiện lợi cho cả Client (Agent) và Server.
 
-pip install -r requirements.txt
-python main.py
-```
-*Server API hoạt động tại cổng **8080** (`http://localhost:8080`).*
+### A. Quản lý Máy chủ (Server - FastAPI & React Dashboard)
+Các kịch bản lệnh được đặt ngay tại **thư mục gốc** của dự án:
+1.  **Cài đặt toàn bộ (Setup):** Kích hoạt [server_setup.bat](file:///server_setup.bat) để tự động khởi tạo môi trường ảo Python venv, cài đặt các dependencies Backend và đồng thời tải các gói thư viện Node.js cho Frontend.
+2.  **Khởi chạy hệ thống (Run):** Kích hoạt [server_run.bat](file:///server_run.bat) để khởi động song song Backend API (Cổng `8085`), Frontend Web (Cổng `5173`), và tự động mở trình duyệt truy cập thẳng vào Dashboard.
+3.  **Dừng hệ thống (Stop):** Kích hoạt [server_stop.bat](file:///server_stop.bat) để tắt sạch các cửa sổ console đang chạy ngầm và giải phóng các cổng mạng an toàn.
 
-### 2. Triển khai Agent trên các máy khách
-Yêu cầu Python 3.8+ đã được thêm vào PATH.
-1.  Copy thư mục `agent/` sang máy khách.
-2.  Nhấp chuột phải vào `install.bat` -> chọn **Run as Administrator** (Chạy với quyền Admin).
-3.  Nhập IP Server, thông tin phòng ban, vị trí và mã Token bảo mật của bạn.
-*Agent sẽ tự động cài thư viện, sinh UUID, và đăng ký tác vụ chạy ngầm vĩnh viễn vơi **Task Scheduler** Windows.*
-
-### 3. Khởi chạy Dashboard Web (Vite React)
-Yêu cầu Node.js v18 hoặc v20+.
-```bash
-cd frontend
-npm install
-npm run dev
-```
-*Dashboard Web sẽ mở tại địa chỉ `http://localhost:5173`.*
+### B. Quản lý Máy khách (Client - Agent giám sát)
+Các kịch bản lệnh nằm bên trong thư mục [agent/](file:///agent/) trên máy khách:
+1.  **Cài đặt & Đăng ký ngầm (Setup):** Nhấp chuột phải vào [agent/setup.bat](file:///agent/setup.bat) -> Chọn **Run as Administrator** (Chạy với quyền Admin). Nhập địa chỉ Server, cấu hình phòng ban và token bảo mật. Agent sẽ tự động cấu hình, sinh mã định danh UUID vĩnh viễn và đăng ký dịch vụ chạy ngầm vĩnh viễn qua Windows Task Scheduler.
+2.  **Chạy thử nghiệm (Run):** Kích hoạt [agent/run.bat](file:///agent/run.bat) để chạy console theo dõi trực tiếp logs gửi dữ liệu thời gian thực về Server.
+3.  **Dừng giám sát (Stop):** Kích hoạt [agent/stop.bat](file:///agent/stop.bat) để tạm dừng cả tiến trình console lẫn dịch vụ chạy ngầm trên máy trạm.
 
 ---
 
