@@ -10,14 +10,29 @@ import winreg
 import psutil
 import requests
 
-# Hỗ trợ UTF-8 output cho console trên Windows tránh UnicodeEncodeError
-if hasattr(sys.stdout, 'reconfigure'):
-    sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
+# Xác định thư mục gốc trước tiên (cần cho log file path)
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Đường dẫn tệp cấu hình
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+
+# Khi đóng gói --noconsole: stdout/stderr là None — chuyển hướng print() sang file log
+if getattr(sys, 'frozen', False) and (sys.stdout is None or sys.stderr is None):
+    _log_path = os.path.join(BASE_DIR, "agent.log")
+    _log_file = open(_log_path, "a", encoding="utf-8", errors="ignore")
+    if sys.stdout is None:
+        sys.stdout = _log_file
+    if sys.stderr is None:
+        sys.stderr = _log_file
+else:
+    # Hỗ trợ UTF-8 output cho console trên Windows tránh UnicodeEncodeError
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8')
+
 
 def load_config():
     """Tải cấu hình từ config.json."""
@@ -471,12 +486,201 @@ def send_report(config, payload):
         print(f"Không thể kết nối đến Server tại {report_endpoint}: {e}")
     return False
 
+def is_first_run(config):
+    """Kiểm tra xem đây có phải lần chạy đầu tiên chưa được cấu hình."""
+    server_url = config.get("server_url", "").strip()
+    return not server_url or server_url in (
+        "http://localhost:8085",
+        "http://localhost:8085/",
+        "http://127.0.0.1:8085",
+        "http://127.0.0.1:8085/"
+    )
+
+
+def set_autostart(enable=True):
+    """Cấu hình tự động chạy cùng Windows trong Registry HKEY_CURRENT_USER."""
+    try:
+        exe_path = sys.executable
+        reg_key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+            0, winreg.KEY_SET_VALUE
+        )
+        if enable:
+            winreg.SetValueEx(reg_key, "NetDeviceAgent", 0, winreg.REG_SZ, f'"{exe_path}"')
+            print("Đã đăng ký tự động khởi động cùng Windows.")
+        else:
+            try:
+                winreg.DeleteValue(reg_key, "NetDeviceAgent")
+                print("Đã hủy đăng ký tự động khởi động cùng Windows.")
+            except FileNotFoundError:
+                pass
+        winreg.CloseKey(reg_key)
+        return True
+    except Exception as e:
+        print(f"Lỗi đăng ký Registry auto-start: {e}")
+        return False
+
+
+def first_run_setup():
+    """Wizard cài đặt lần đầu — hiện cửa sổ tkinter, không cần terminal."""
+    try:
+        import tkinter as tk
+        from tkinter import messagebox
+    except ImportError:
+        # Fallback: nếu tkinter không có, dùng console
+        return _first_run_setup_console()
+
+    config = load_config()
+    setup_done = [False]
+
+    root = tk.Tk()
+    root.title("NetDevice Manager Agent — Cài đặt lần đầu")
+    root.configure(bg="#0f172a")
+    root.resizable(False, False)
+
+    # Căn giữa cửa sổ trên màn hình
+    w, h = 500, 600
+    ws = root.winfo_screenwidth()
+    hs = root.winfo_screenheight()
+    root.geometry(f"{w}x{h}+{(ws - w) // 2}+{(hs - h) // 2}")
+    root.attributes("-topmost", True)
+
+    # HEADER
+    hdr = tk.Frame(root, bg="#1d4ed8", pady=14)
+    hdr.pack(fill="x")
+    tk.Label(hdr, text="NetDevice Manager Agent", bg="#1d4ed8", fg="white",
+             font=("Segoe UI", 13, "bold")).pack()
+    tk.Label(hdr, text="Cài đặt lần đầu  —  Kết nối với Server giám sát",
+             bg="#1d4ed8", fg="#93c5fd", font=("Segoe UI", 9)).pack()
+
+    # FORM
+    form = tk.Frame(root, bg="#0f172a", padx=24)
+    form.pack(fill="both", expand=True, pady=4)
+
+    def field(label, default=""):
+        tk.Label(form, text=label, bg="#0f172a", fg="#94a3b8",
+                 font=("Segoe UI", 8, "bold"), anchor="w").pack(fill="x", pady=(8, 2))
+        e = tk.Entry(form, bg="#1e293b", fg="white", insertbackground="white",
+                     relief="flat", font=("Segoe UI", 10),
+                     highlightthickness=1, highlightcolor="#3b82f6",
+                     highlightbackground="#334155")
+        e.pack(fill="x", ipady=6)
+        if default:
+            e.insert(0, default)
+        return e
+
+    e_url      = field("URL SERVER  (bắt buộc)  —  vd: http://192.168.1.100:8085")
+    e_token    = field("SECRET TOKEN", "secure-intranet-token-123")
+    e_location = field("VỊ TRÍ ĐẶT MÁY  —  vd: Phòng IT, Tầng 2", "Phong IT")
+    e_dept     = field("PHÒNG BAN  —  vd: IT, Kế toán, Kỹ thuật", "IT")
+    e_owner    = field("NGƯỜI PHỤ TRÁCH / SỬ DỤNG MÁY")
+    e_interval = field("CHU KỲ GỬI BÁO CÁO  (giây)", "60")
+
+    # CHECKBOX AUTO-START
+    var_autostart = tk.BooleanVar(value=True)
+    chk_autostart = tk.Checkbutton(form, text="Tự động khởi động cùng Windows (khuyên dùng)",
+                                   variable=var_autostart, bg="#0f172a", fg="#94a3b8",
+                                   selectcolor="#1e293b", activebackground="#0f172a",
+                                   activeforeground="white", font=("Segoe UI", 9),
+                                   cursor="hand2")
+    chk_autostart.pack(anchor="w", pady=(12, 4))
+
+    def on_submit():
+        url = e_url.get().strip()
+        if not url:
+            messagebox.showerror("Lỗi",
+                "URL Server là bắt buộc!\nVí dụ: http://192.168.1.100:8085",
+                parent=root)
+            return
+        if not url.startswith("http"):
+            url = "http://" + url
+        config["server_url"]      = url.rstrip("/")
+        config["secret_token"]    = e_token.get().strip() or "secure-intranet-token-123"
+        config["location"]        = e_location.get().strip() or "Phong IT"
+        config["department"]      = e_dept.get().strip() or "IT"
+        config["owner"]           = e_owner.get().strip() or "Chua xac dinh"
+        try:
+            config["report_interval"] = max(10, int(e_interval.get().strip()))
+        except ValueError:
+            config["report_interval"] = 60
+        
+        # Đăng ký tự động khởi động cùng Windows nếu được chọn
+        set_autostart(var_autostart.get())
+        
+        save_config(config)
+        setup_done[0] = True
+        root.destroy()
+
+    # SUBMIT BUTTON
+    bf = tk.Frame(root, bg="#0f172a", padx=24, pady=14)
+    bf.pack(fill="x")
+    tk.Button(bf, text="\u2713   Lưu cấu hình và bắt đầu Agent",
+              command=on_submit, bg="#2563eb", fg="white",
+              activebackground="#1d4ed8", activeforeground="white",
+              font=("Segoe UI", 10, "bold"), relief="flat",
+              cursor="hand2", pady=10).pack(fill="x")
+
+    # Không cho đóng cửa sổ khi chưa điền thông tin
+    root.protocol("WM_DELETE_WINDOW", lambda: None)
+    root.mainloop()
+
+    if not setup_done[0]:
+        sys.exit(0)
+    return load_config()
+
+
+def _first_run_setup_console():
+    """Fallback wizard dùng terminal nếu tkinter không khả dụng."""
+    print()
+    print("=" * 62)
+    print("    NETDEVICE MANAGER AGENT  -  CAI DAT LAN DAU")
+    print("=" * 62)
+    config = load_config()
+    while True:
+        url = input("  [1] URL Server (vd: http://192.168.1.100:8085)\n  > ").strip()
+        if url:
+            if not url.startswith("http"):
+                url = "http://" + url
+            config["server_url"] = url.rstrip("/")
+            break
+        print("      !! URL Server la bat buoc.")
+    token = input(f"\n  [2] Secret Token [secure-intranet-token-123]\n  > ").strip()
+    config["secret_token"] = token or "secure-intranet-token-123"
+    location = input(f"\n  [3] Vi tri dat may [Phong IT]\n  > ").strip()
+    config["location"] = location or "Phong IT"
+    department = input(f"\n  [4] Phong ban [IT]\n  > ").strip()
+    config["department"] = department or "IT"
+    owner = input(f"\n  [5] Nguoi phu trach [Chua xac dinh]\n  > ").strip()
+    config["owner"] = owner or "Chua xac dinh"
+    interval_str = input(f"\n  [6] Chu ky gui bao cao giay [60]\n  > ").strip()
+    try:
+        config["report_interval"] = max(10, int(interval_str)) if interval_str else 60
+    except ValueError:
+        config["report_interval"] = 60
+        
+    autostart_str = input("\n  [7] Tu dong khoi dong cung Windows? (C/K) [C]\n  > ").strip().lower()
+    enable_autostart = autostart_str != 'k'
+    set_autostart(enable_autostart)
+    
+    save_config(config)
+    print(f"\n  OK  Server: {config['server_url']}")
+    return config
+
+
+
 def main():
-    print("=== Khởi chạy NetDevice Manager Agent ===")
+    print("=== Khoi chay NetDevice Manager Agent ===")
+
+    # Kiểm tra cấu hình — nếu là lần đầu, hiện wizard setup
+    config = load_config()
+    if is_first_run(config):
+        config = first_run_setup()
+
     while True:
         config = load_config()
         if not config:
-            print("Không tải được cấu hình. Thử lại sau 10 giây...")
+            print("Khong tai duoc cau hinh. Thu lai sau 10 giay...")
             time.sleep(10)
             continue
             
