@@ -118,7 +118,7 @@ def get_or_create_uuid(config):
                 pass
             return config_uuid
 
-def run_powershell(cmd):
+def run_powershell(cmd, timeout=30):
     """Chạy lệnh PowerShell ẩn không hiện cửa sổ cmd phụ."""
     try:
         startupinfo = subprocess.STARTUPINFO()
@@ -132,7 +132,7 @@ def run_powershell(cmd):
             encoding="utf-8",
             errors="ignore"
         )
-        stdout, stderr = process.communicate(timeout=30)
+        stdout, stderr = process.communicate(timeout=timeout)
         if process.returncode == 0:
             return stdout.strip()
     except Exception as e:
@@ -218,8 +218,9 @@ def get_hardware_info():
 
 def get_windows_activation():
     """Kiểm tra trạng thái kích hoạt bản quyền Windows."""
-    cmd = 'Get-CimInstance SoftwareLicensingProduct | Where-Object {$_.LicenseStatus -eq 1 -and $_.Name -like "*Windows*"} | Select-Object -First 1 | ConvertTo-Json'
-    res = run_powershell(cmd)
+    # Sử dụng bộ lọc CIM trực tiếp ở cấp WMI để tối ưu hóa hiệu năng cực cao, tránh quét toàn bộ các sản phẩm khác (như Office) gây treo/lag
+    cmd = 'Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name LIKE \'Windows%\' AND LicenseStatus = 1" | Select-Object -First 1 | ConvertTo-Json'
+    res = run_powershell(cmd, timeout=5)
     if res:
         try:
             data = json.loads(res)
