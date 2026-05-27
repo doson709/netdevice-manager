@@ -66,24 +66,57 @@ def save_config(config):
         print(f"Lỗi ghi tệp cấu hình: {e}")
 
 def get_or_create_uuid(config):
-    """Lấy Hardware ID (MachineGuid) độc nhất của Windows để định danh thiết bị, chống sao chép trùng lặp."""
+    """
+    Lấy hoặc tạo UUID định danh độc nhất cho thiết bị.
+    Sử dụng UUID v4 ngẫu nhiên lưu trong config.json.
+    Để chống trùng lặp khi sao chép thư mục hoặc clone máy ảo (VM),
+    chúng tôi đối chiếu danh sách MAC address hiện tại với MAC đã lưu.
+    Nếu MAC đã lưu không khớp với bất kỳ card mạng nào, sinh UUID mới.
+    """
+    # 1. Lấy danh sách tất cả địa chỉ MAC hiện tại của máy
+    current_macs = set()
     try:
-        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography", 0, winreg.KEY_READ)
-        machine_guid, _ = winreg.QueryValueEx(key, "MachineGuid")
-        winreg.CloseKey(key)
-        machine_guid = machine_guid.strip()
+        addrs = psutil.net_if_addrs()
+        for interface, addr_list in addrs.items():
+            for addr in addr_list:
+                if addr.family == psutil.AF_LINK:
+                    mac = addr.address.replace("-", ":").upper()
+                    if mac:
+                        current_macs.add(mac)
+    except Exception as e:
+        print(f"Lỗi đọc danh sách MAC: {e}")
+
+    # Lấy MAC chính đại diện hiện tại
+    try:
+        _, _, main_mac = get_active_network_info()
     except Exception:
-        # Fallback trong trường hợp đặc biệt không đọc được Registry
-        machine_guid = config.get("device_uuid", "").strip()
-        if not machine_guid:
-            machine_guid = str(uuid.uuid4())
-            
-    # Đồng bộ hóa cứng vào config.json nếu chưa khớp (ví dụ thư mục bị sao chép từ máy khác sang)
-    if config.get("device_uuid") != machine_guid:
-        config["device_uuid"] = machine_guid
+        main_mac = ""
+
+    device_uuid = config.get("device_uuid", "").strip()
+    saved_mac = config.get("device_mac", "").strip()
+
+    # 2. Phát hiện sao chép/clone máy
+    is_cloned = False
+    if device_uuid and saved_mac and current_macs:
+        if saved_mac not in current_macs:
+            # MAC đã lưu không tồn tại trên bất kỳ card mạng nào của máy hiện tại
+            # -> Đây chắc chắn là thư mục được sao chép sang máy khác hoặc VM clone
+            is_cloned = True
+            print("Phát hiện Agent được sao chép/clone sang máy mới. Tiến hành cấp UUID mới...")
+
+    # 3. Tạo mới nếu chưa có hoặc phát hiện clone
+    if not device_uuid or is_cloned:
+        device_uuid = str(uuid.uuid4())
+        config["device_uuid"] = device_uuid
+        if main_mac:
+            config["device_mac"] = main_mac
         save_config(config)
-        
-    return machine_guid
+    elif not saved_mac and main_mac:
+        # Đồng bộ lưu lại MAC chính nếu trước đó chưa lưu
+        config["device_mac"] = main_mac
+        save_config(config)
+
+    return device_uuid
 
 def run_powershell(cmd, timeout=30, silent=False):
     """Chạy lệnh PowerShell ẩn không hiện cửa sổ cmd phụ."""
