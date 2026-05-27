@@ -19,6 +19,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
 
   // Metadata editing states
   const [isEditing, setIsEditing] = useState(false);
+  const [clientName, setClientName] = useState("");
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [owner, setOwner] = useState("");
@@ -30,6 +31,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
       setDetail(res);
       
       // Khởi tạo các ô nhập liệu metadata chỉnh sửa
+      setClientName(res.device.client_name || res.device.hostname || "");
       setLocation(res.device.location || "");
       setDepartment(res.device.department || "");
       setOwner(res.device.owner || "");
@@ -74,6 +76,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
   const handleUpdateMetadata = async () => {
     try {
       await api.updateDeviceMetadata(deviceId, {
+        client_name: clientName,
         location,
         department,
         owner
@@ -82,6 +85,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
       
       // Reload lại thông tin
       const updated = { ...detail };
+      updated.device.client_name = clientName;
       updated.device.location = location;
       updated.device.department = department;
       updated.device.owner = owner;
@@ -138,7 +142,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-3xl font-extrabold text-white tracking-tight">{device.hostname}</h2>
+                <h2 className="text-3xl font-extrabold text-white tracking-tight">{device.client_name || device.hostname}</h2>
                 {device.is_online ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -151,7 +155,9 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-500 mt-1 font-semibold">ID Thiết bị (UUID): {device.device_id}</p>
+              <p className="text-xs text-slate-500 mt-1 font-semibold">
+                Tên máy (OS Hostname): <span className="text-slate-400">{device.hostname}</span> • ID Thiết bị (UUID): <span className="text-slate-400 font-mono text-[11px]">{device.device_id}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -185,7 +191,28 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
       </div>
 
       {/* METADATA INFO PANEL */}
-      <div className="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Tên Client */}
+        <div className="flex items-start gap-4">
+          <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500">
+            <Monitor className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <p className="text-slate-500 text-[10px] font-semibold uppercase tracking-wider">Tên Client hiển thị</p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                className="glass-input text-xs w-full mt-1.5"
+                placeholder="Đặt tên client hiển thị..."
+              />
+            ) : (
+              <p className="text-slate-200 text-sm font-bold mt-1.5">{device.client_name || device.hostname}</p>
+            )}
+          </div>
+        </div>
+
         {/* Người quản lý */}
         <div className="flex items-start gap-4">
           <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-500">

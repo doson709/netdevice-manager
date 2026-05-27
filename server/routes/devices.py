@@ -26,10 +26,11 @@ def get_all_devices(
     """Lấy danh sách thiết bị hỗ trợ tìm kiếm, lọc, sắp xếp và phân trang."""
     query = db.query(Device)
     
-    # 1. Tìm kiếm (hostname, current_user, owner, ip)
+    # 1. Tìm kiếm (hostname, client_name, current_user, owner, ip)
     if search:
         search_filter = or_(
             Device.hostname.ilike(f"%{search}%"),
+            Device.client_name.ilike(f"%{search}%"),
             Device.current_user.ilike(f"%{search}%"),
             Device.owner.ilike(f"%{search}%"),
             Device.mac_address.ilike(f"%{search}%")
@@ -70,6 +71,7 @@ def get_all_devices(
         
         results.append({
             "device_id": d.device_id,
+            "client_name": d.client_name or d.hostname,
             "mac_address": d.mac_address,
             "hostname": d.hostname,
             "os_name": d.os_name,
@@ -164,6 +166,7 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
     return {
         "device": {
             "device_id": device.device_id,
+            "client_name": device.client_name or device.hostname,
             "mac_address": device.mac_address,
             "hostname": device.hostname,
             "os_name": device.os_name,
@@ -253,6 +256,8 @@ def update_device_metadata(
     if not device:
         raise HTTPException(status_code=404, detail="Không tìm thấy thiết bị")
         
+    if "client_name" in payload:
+        device.client_name = payload["client_name"].strip() or device.hostname
     if "location" in payload:
         device.location = payload["location"].strip()
     if "department" in payload:

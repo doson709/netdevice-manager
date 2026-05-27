@@ -99,6 +99,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
                     "level": "warning",
                     "device_id": dev.device_id,
                     "hostname": dev.hostname,
+                    "client_name": dev.client_name or dev.hostname,
                     "message": f"Ổ đĩa {d_disk.device} ({d_disk.mountpoint}) đã dùng {d_disk.usage_percent}%, còn trống {d_disk.free_gb} GB"
                 })
 
@@ -110,6 +111,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
             "level": "info",
             "device_id": dev.device_id,
             "hostname": dev.hostname,
+            "client_name": dev.client_name or dev.hostname,
             "message": f"Thiết bị mất kết nối từ lúc {dev.last_seen.strftime('%Y-%m-%d %H:%M:%S')}"
         })
 

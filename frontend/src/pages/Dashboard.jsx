@@ -286,7 +286,12 @@ export default function Dashboard({ onNavigateToDevice }) {
                     <WifiOff className="w-5 h-5 shrink-0 text-slate-500 mt-0.5" />
                   )}
                   <div className="text-xs">
-                    <p className="font-semibold text-slate-200 mb-0.5">{alert.hostname}</p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <p className="font-bold text-slate-200">{alert.client_name || alert.hostname}</p>
+                      {alert.client_name && alert.client_name !== alert.hostname && (
+                        <span className="text-[10px] text-slate-500 font-normal">({alert.hostname})</span>
+                      )}
+                    </div>
                     <p className="text-slate-400 leading-relaxed">{alert.message}</p>
                   </div>
                 </div>

@@ -66,6 +66,7 @@ def receive_agent_report(
             # Tạo mới thiết bị
             device = Device(
                 device_id=payload.device_id,
+                client_name=payload.client_name or payload.hostname,
                 mac_address=payload.mac_address,
                 hostname=payload.hostname,
                 os_name=payload.os_name,
@@ -92,6 +93,8 @@ def receive_agent_report(
             device.is_online = True
             
             # Cập nhật metadata nếu agent gửi cấu hình mới
+            if payload.client_name:
+                device.client_name = payload.client_name
             if payload.location:
                 device.location = payload.location
             if payload.department:

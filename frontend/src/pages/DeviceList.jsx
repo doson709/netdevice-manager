@@ -133,8 +133,8 @@ export default function DeviceList({ onNavigateToDevice }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-slate-800/80 bg-slate-900/30 text-xs font-semibold text-slate-400 tracking-wider uppercase">
-                <th className="px-6 py-4.5 cursor-pointer hover:text-slate-200" onClick={() => handleSort("hostname")}>
-                  <div className="flex items-center gap-1.5">Tên máy / IP <ArrowUpDown className="w-3.5 h-3.5" /></div>
+                <th className="px-6 py-4.5 cursor-pointer hover:text-slate-200" onClick={() => handleSort("client_name")}>
+                  <div className="flex items-center gap-1.5">Tên Client / Tên máy <ArrowUpDown className="w-3.5 h-3.5" /></div>
                 </th>
                 <th className="px-6 py-4.5">Người phụ trách</th>
                 <th className="px-6 py-4.5">Bộ phận / Vị trí</th>
@@ -161,15 +161,15 @@ export default function DeviceList({ onNavigateToDevice }) {
                     onClick={() => onNavigateToDevice(dev.device_id)}
                     className="hover:bg-slate-900/30 cursor-pointer transition-all duration-150 group"
                   >
-                    {/* Tên máy & OS */}
+                    {/* Tên Client & OS */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-slate-950 border border-slate-800/80 rounded-xl text-slate-400 group-hover:text-brand-400 group-hover:border-brand-500/20 transition-all">
                           <Monitor className="w-4.5 h-4.5" />
                         </div>
                         <div>
-                          <p className="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">{dev.hostname}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">{dev.os_name} • {dev.architecture}</p>
+                          <p className="font-bold text-slate-200 text-sm group-hover:text-white transition-colors">{dev.client_name || dev.hostname}</p>
+                          <p className="text-[10px] text-slate-500 mt-0.5">Tên máy: {dev.hostname} • {dev.os_name}</p>
                         </div>
                       </div>
                     </td>
@@ -227,7 +227,7 @@ export default function DeviceList({ onNavigateToDevice }) {
                     {/* Hành động xóa */}
                     <td className="px-6 py-4 text-center">
                       <button
-                        onClick={(e) => handleDelete(e, dev.device_id, dev.hostname)}
+                        onClick={(e) => handleDelete(e, dev.device_id, dev.client_name || dev.hostname)}
                         className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
                         title="Xóa thiết bị khỏi hệ thống"
                       >

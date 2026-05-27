@@ -14,6 +14,7 @@ class Device(Base):
     __tablename__ = "devices"
 
     device_id = Column(String, primary_key=True, index=True) # UUID định danh thiết bị
+    client_name = Column(String, index=True)                 # Tên Client tùy chọn đặt
     mac_address = Column(String)
     hostname = Column(String, index=True)
     os_name = Column(String)
@@ -147,6 +148,7 @@ class ProcessSchema(BaseModel):
 
 class ReportPayload(BaseModel):
     device_id: str
+    client_name: Optional[str] = None
     mac_address: str
     hostname: str
     os_name: str
