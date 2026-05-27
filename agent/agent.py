@@ -355,18 +355,36 @@ def collect_all_data(config):
     
     # 9. Top 20 Processes
     processes = []
-    for proc in psutil.process_iter(["pid", "name", "memory_percent", "cpu_percent"]):
+    for proc in psutil.process_iter():
         try:
-            p_info = proc.info
-            # Lọc các tiến trình rỗng
-            if p_info["name"] and p_info["memory_percent"] is not None:
+            pid = proc.pid
+            
+            # Đọc tên tiến trình
+            try:
+                name = proc.name()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                continue # Bỏ qua nếu không đọc được cả tên
+                
+            # Đọc phần trăm bộ nhớ
+            try:
+                memory_percent = proc.memory_percent()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                memory_percent = 0.0
+                
+            # Đọc phần trăm CPU
+            try:
+                cpu_percent = proc.cpu_percent()
+            except (psutil.AccessDenied, psutil.NoSuchProcess):
+                cpu_percent = 0.0
+                
+            if name:
                 processes.append({
-                    "pid": p_info["pid"],
-                    "name": p_info["name"],
-                    "memory_percent": round(p_info["memory_percent"], 2),
-                    "cpu_percent": round(p_info["cpu_percent"] or 0.0, 2)
+                    "pid": pid,
+                    "name": name,
+                    "memory_percent": round(memory_percent, 2) if memory_percent else 0.0,
+                    "cpu_percent": round(cpu_percent, 2) if cpu_percent else 0.0
                 })
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+        except (psutil.NoSuchProcess, psutil.ZombieProcess):
             pass
             
     # Sắp xếp top 20 tiến trình tiêu thụ RAM cao nhất
