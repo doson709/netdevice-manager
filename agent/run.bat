@@ -4,6 +4,15 @@ echo =======================================================
 echo     NetDevice Manager Agent - Khoi chay Giam sat
 echo =======================================================
 echo.
+:: Kiem tra quyen Administrator va tu dong nang quyen
+openfiles >nul 2>&1
+if %errorlevel% NEQ 0 (
+    echo [+] Dang yeu cau quyen Administrator de khoi chay...
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+cd /d "%~dp0"
+
 
 :: 1. Kiem tra xem Task Scheduler co tac vu ngam khong, neu co thi kich hoat chay ngam
 schtasks /run /tn "NetDeviceAgent" >nul 2>&1
