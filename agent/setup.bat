@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 title NetDevice Manager Agent - Setup
 echo =======================================================
 echo     NetDevice Manager Agent - Cai dat Client
@@ -7,7 +8,7 @@ echo.
 
 :: Kiem tra quyen Administrator
 openfiles >nul 2>&1
-if %errorlevel% neq 0 (
+if !errorlevel! neq 0 (
     echo [ERROR] Vui long nhap chuot phai vao file setup.bat va chon "Run as Administrator"!
     echo.
     pause
@@ -16,7 +17,7 @@ if %errorlevel% neq 0 (
 
 echo [+] Dang cai dat cac thu vien Python bat buoc...
 pip install -r "%~dp0requirements.txt"
-if %errorlevel% neq 0 (
+if !errorlevel! neq 0 (
     echo [WARNING] Co loi xay ra khi cai dat thu vien. Vui long kiem tra lai phien ban Python va pip.
 )
 
@@ -31,14 +32,16 @@ set /p DEP="4. Nhap ten phong ban (vi du: IT): "
 set /p OWNER="5. Nhap ten nguoi su dung (vi du: Nguyen Van A): "
 
 :: Dat gia tri mac dinh neu bo qua
-if "%SERVER_URL%"=="" set SERVER_URL=http://localhost:8085
-if "%TOKEN%"=="" set TOKEN=secure-intranet-token-123
+if "!SERVER_URL!"=="" set SERVER_URL=http://localhost:8085
+if "!TOKEN!"=="" set TOKEN=secure-intranet-token-123
+if "!LOC!"=="" set LOC=Phong IT, Tang 2
+if "!DEP!"=="" set DEP=IT
+if "!OWNER!"=="" set OWNER=Nguyen Van A
 
 :: Tu dong them http:// neu nguoi dung nhap thieu
-echo !SERVER_URL! | findstr /b /i "http://" >nul || echo !SERVER_URL! | findstr /b /i "https://" >nul || set SERVER_URL=http://!SERVER_URL!
-if "%LOC%"=="" set LOC=Phong IT, Tang 2
-if "%DEP%"=="" set DEP=IT
-if "%OWNER%"=="" set OWNER=Nguyen Van A
+powershell -NoProfile -Command "$u='%SERVER_URL%'; if ($u -notmatch '^https?://') { $u = 'http://' + $u }; Write-Output $u" > "%TEMP%\_url.txt"
+set /p SERVER_URL=<"%TEMP%\_url.txt"
+del "%TEMP%\_url.txt" >nul 2>&1
 
 :: Su dung PowerShell de tao (neu chua co) va cap nhat file config.json
 :: Luu y: Khong sua device_uuid o day — agent.py tu dong lay tu Registry hoac sinh moi
@@ -66,9 +69,9 @@ for /f "delims=" %%i in ('where pythonw.exe 2^>nul') do (
     set PYTHONW_PATH=%%i
 )
 
-schtasks /create /tn "NetDeviceAgent" /tr "\"%PYTHONW_PATH%\" \"%~dp0agent.py\"" /sc onstart /ru SYSTEM /rl HIGHEST
+schtasks /create /tn "NetDeviceAgent" /tr "\"!PYTHONW_PATH!\" \"%~dp0agent.py\"" /sc onstart /ru SYSTEM /rl HIGHEST
 
-if %errorlevel% EQU 0 (
+if !errorlevel! EQU 0 (
     echo [+] Dang kich hoat chay ngam Agent ngay lap tuc...
     schtasks /run /tn "NetDeviceAgent" >nul 2>&1
     echo.
