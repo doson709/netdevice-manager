@@ -35,9 +35,10 @@ def load_config():
         return default_config
     
     try:
-        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        with open(CONFIG_PATH, "r", encoding="utf-8-sig") as f:
             return json.load(f)
-    except Exception:
+    except Exception as e:
+        print(f"Lỗi đọc tệp cấu hình config.json: {e}")
         return {}
 
 def save_config(config):
