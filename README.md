@@ -43,6 +43,10 @@ flowchart TB
 
 ```
 netdevice-manager/
+├── server_setup.bat          # File cài đặt dependencies Backend & Frontend
+├── server_run.bat            # File khởi chạy đồng thời Backend & Frontend
+├── server_stop.bat           # File dừng toàn bộ các tiến trình Server
+├── server_update.bat         # File cập nhật code mới từ Git & nâng cấp dependencies
 ├── agent/                    # Cấu phần cài trên client máy khách
 │   ├── agent.py              # Script thu thập dữ liệu (PowerShell/winreg/UUID/API-Key)
 │   ├── config.json           # Cấu hình địa chỉ server, token và UUID trạm
@@ -50,6 +54,7 @@ netdevice-manager/
 │   ├── setup.bat             # File cài đặt cấu hình & đăng ký chạy ngầm Task Scheduler
 │   ├── run.bat               # Script khởi chạy Console & kích hoạt Task chạy ngầm
 │   ├── stop.bat              # Script dừng cả tiến trình Console lẫn Task chạy ngầm
+│   ├── update.bat            # Script tự động cập nhật code Agent mới nhất từ Repo
 │   ├── install.bat           # File cài đặt phụ trợ (được gọi bởi setup.bat)
 │   └── README.md             # Hướng dẫn chi tiết cài đặt Agent
 │
@@ -100,12 +105,14 @@ Các kịch bản lệnh được đặt ngay tại **thư mục gốc** của d
 1.  **Cài đặt toàn bộ (Setup):** Kích hoạt [server_setup.bat](file:///server_setup.bat) để tự động khởi tạo môi trường ảo Python venv, cài đặt các dependencies Backend và đồng thời tải các gói thư viện Node.js cho Frontend.
 2.  **Khởi chạy hệ thống (Run):** Kích hoạt [server_run.bat](file:///server_run.bat) để khởi động song song Backend API (Cổng `8085`), Frontend Web (Cổng `5173`), và tự động mở trình duyệt truy cập thẳng vào Dashboard.
 3.  **Dừng hệ thống (Stop):** Kích hoạt [server_stop.bat](file:///server_stop.bat) để tắt sạch các cửa sổ console đang chạy ngầm và giải phóng các cổng mạng an toàn.
+4.  **Cập nhật hệ thống (Update):** Kích hoạt [server_update.bat](file:///server_update.bat) để tự động kéo mã nguồn mới nhất từ Git Repository và nâng cấp các dependencies Backend/Frontend tương ứng chỉ với 1 cú nhấp chuột.
 
 ### B. Quản lý Máy khách (Client - Agent giám sát)
 Các kịch bản lệnh nằm bên trong thư mục [agent/](file:///agent/) trên máy khách:
 1.  **Cài đặt & Đăng ký ngầm (Setup):** Nhấp chuột phải vào [agent/setup.bat](file:///agent/setup.bat) -> Chọn **Run as Administrator** (Chạy với quyền Admin). Nhập địa chỉ Server, cấu hình phòng ban và token bảo mật. Agent sẽ tự động cấu hình, sinh mã định danh UUID vĩnh viễn và đăng ký dịch vụ chạy ngầm vĩnh viễn qua Windows Task Scheduler.
 2.  **Chạy thử nghiệm (Run):** Kích hoạt [agent/run.bat](file:///agent/run.bat) để chạy console theo dõi trực tiếp logs gửi dữ liệu thời gian thực về Server.
 3.  **Dừng giám sát (Stop):** Kích hoạt [agent/stop.bat](file:///agent/stop.bat) để tạm dừng cả tiến trình console lẫn dịch vụ chạy ngầm trên máy trạm.
+4.  **Cập nhật Agent (Update):** Kích hoạt [agent/update.bat](file:///agent/update.bat) để tự động nâng cấp tệp `agent.py` và dependencies lên phiên bản mới nhất từ Git (đối với môi trường Dev) hoặc tải trực tiếp mã nguồn từ GitHub (đối với máy trạm độc lập).
 
 ---
 
