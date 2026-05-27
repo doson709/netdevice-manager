@@ -45,6 +45,7 @@ powershell -NoProfile -Command ^
     "$path = '%~dp0config.json';" ^
     "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=[guid]::NewGuid().ToString(); report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
     "$json = Get-Content $path -Raw | ConvertFrom-Json;" ^
+    "$json.device_uuid = [guid]::NewGuid().ToString();" ^
     "$json.server_url = '%SERVER_URL%';" ^
     "$json.secret_token = '%TOKEN%';" ^
     "$json.location = '%LOC%';" ^
