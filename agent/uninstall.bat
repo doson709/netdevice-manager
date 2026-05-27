@@ -5,14 +5,15 @@ echo     NetDevice Manager Agent - Go cai dat Client
 echo =======================================================
 echo.
 
-:: Kiem tra quyen Administrator
+:: Kiem tra quyen Administrator va tu dong nang quyen
 openfiles >nul 2>&1
 if %errorlevel% NEQ 0 (
-    echo [ERROR] Vui long nhap chuot phai vao file uninstall.bat va chon "Run as Administrator"!
-    echo.
-    pause
+    echo [+] Dang yeu cau quyen Administrator de go cai dat...
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
     exit /b
 )
+cd /d "%~dp0"
+
 
 echo [+] Dang dung va xoa tac vu tu dong chay ngam (Task Scheduler)...
 schtasks /end /tn "NetDeviceAgent" >nul 2>&1

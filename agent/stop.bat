@@ -5,6 +5,15 @@ echo     NetDevice Manager Agent - Dung Giam sat
 echo =======================================================
 echo.
 
+:: Kiem tra quyen Administrator va tu dong nang quyen
+openfiles >nul 2>&1
+if %errorlevel% NEQ 0 (
+    echo [+] Dang yeu cau quyen Administrator de dung dich vu...
+    powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
+    exit /b
+)
+cd /d "%~dp0"
+
 echo [+] Dang dung cac tien trinh Agent...
 
 :: 1. Dung Task Scheduler chay ngam
