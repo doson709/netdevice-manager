@@ -9,7 +9,7 @@ echo [+] Dang dung cac tien trinh Agent...
 
 :: 1. Dung Task Scheduler chay ngam
 schtasks /end /tn "NetDeviceAgent" >nul 2>&1
-if %errorlevel% eq 0 (
+if %errorlevel% EQU 0 (
     echo [+] Da dung Tac vu chay ngam "NetDeviceAgent".
 )
 

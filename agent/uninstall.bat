@@ -17,7 +17,7 @@ if %errorlevel% neq 0 (
 echo [+] Dang dung va xoa tac vu tu dong chay ngam (Task Scheduler)...
 schtasks /end /tn "NetDeviceAgent" >nul 2>&1
 schtasks /delete /tn "NetDeviceAgent" /f >nul 2>&1
-if %errorlevel% eq 0 (
+if %errorlevel% EQU 0 (
     echo [+] Da xoa thanh cong Tac vu chay ngam "NetDeviceAgent" khoi Windows.
 )
 
@@ -29,7 +29,7 @@ for /f "tokens=2" %%i in ('tasklist /nh /fi "imagename eq python.exe" /v ^| find
 
 echo [+] Dang xoa cac thong tin lien quan trong Windows Registry...
 reg delete "HKCU\Software\NetDeviceAgent" /f >nul 2>&1
-if %errorlevel% eq 0 (
+if %errorlevel% EQU 0 (
     echo [+] Da xoa sach ma dinh danh UUID trong Registry.
 )
 

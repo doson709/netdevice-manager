@@ -7,7 +7,7 @@ echo.
 
 :: 1. Kiem tra xem Task Scheduler co tac vu ngam khong, neu co thi kich hoat chay ngam
 schtasks /run /tn "NetDeviceAgent" >nul 2>&1
-if %errorlevel% eq 0 (
+if %errorlevel% EQU 0 (
     echo [+] Da kich hoat thanh cong Tac vu chay ngam "NetDeviceAgent" (SYSTEM).
 ) else (
     echo [WARNING] Tac vu chay ngam "NetDeviceAgent" chua duoc dang ky hoac chua co quyen Admin.

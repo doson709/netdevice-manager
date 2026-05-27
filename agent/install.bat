@@ -63,7 +63,7 @@ for /f "delims=" %%i in ('where pythonw.exe 2^>nul') do (
 
 schtasks /create /tn "NetDeviceAgent" /tr "\"%PYTHONW_PATH%\" \"%~dp0agent.py\"" /sc onstart /ru SYSTEM /rl HIGHEST
 
-if %errorlevel% eq 0 (
+if %errorlevel% EQU 0 (
     echo [+] Dang kich hoat chay ngam Agent ngay lap tuc...
     schtasks /run /tn "NetDeviceAgent" >nul 2>&1
     echo.
