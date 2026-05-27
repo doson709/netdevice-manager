@@ -27,8 +27,9 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
     }
   };
 
-  const handleSearch = async () => {
-    if (!query.trim()) {
+  const handleSearch = async (forceQuery = null) => {
+    const searchVal = forceQuery !== null ? forceQuery : query;
+    if (!searchVal.trim()) {
       setResults([]);
       setTotal(0);
       return;
@@ -36,7 +37,7 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
     
     try {
       setLoading(true);
-      const res = await api.searchGlobalSoftware(query, page, limit);
+      const res = await api.searchGlobalSoftware(searchVal, page, limit);
       setResults(res.data);
       setTotal(res.total);
     } catch (err) {
@@ -50,9 +51,26 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
     loadTopSoftware();
   }, []);
 
+  // Thiết lập làm mới thời gian thực (Real-time Search) với cơ chế Debounce (trì hoãn 300ms)
+  // giúp tăng tốc độ gõ phím cực mượt và tránh spam flood request làm nghẽn server
   useEffect(() => {
-    handleSearch();
-  }, [page]);
+    if (!query.trim()) {
+      setResults([]);
+      setTotal(0);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, page]);
+
+  // Đưa trang về 1 khi từ khóa thay đổi để bắt đầu tìm kiếm từ trang đầu tiên
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
   const triggerSearch = () => {
     setPage(1);
@@ -112,7 +130,8 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-800/80 bg-slate-900/30 text-slate-400 font-semibold uppercase tracking-wider">
-                    <th className="px-6 py-3.5">Tên máy trạm</th>
+                    <th className="px-6 py-3.5">Tên Client hiển thị</th>
+                    <th className="px-6 py-3.5">Phần mềm phát hiện</th>
                     <th className="px-6 py-3.5">Người sử dụng</th>
                     <th className="px-6 py-3.5">Bộ phận</th>
                     <th className="px-6 py-3.5">Phiên bản đã cài</th>
@@ -121,7 +140,7 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                 <tbody className="divide-y divide-slate-800/40">
                   {loading ? (
                     <tr>
-                      <td colSpan="4" className="text-center py-16">
+                      <td colSpan="5" className="text-center py-16">
                         <div className="inline-block w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                       </td>
                     </tr>
@@ -135,10 +154,15 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                         {/* Tên máy */}
                         <td className="px-6 py-3.5 font-bold text-slate-200 flex items-center gap-2">
                           <Monitor className="w-4 h-4 text-slate-500 shrink-0" />
-                          <span>{r.hostname}</span>
+                          <span>{r.client_name || r.hostname}</span>
                           {r.is_online ? (
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
                           ) : null}
+                        </td>
+                        
+                        {/* Phần mềm phát hiện */}
+                        <td className="px-6 py-3.5 text-brand-400 font-bold max-w-[180px] truncate" title={r.software_name}>
+                          {r.software_name}
                         </td>
                         
                         {/* Người dùng */}
@@ -156,7 +180,7 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center py-20 text-slate-500 font-semibold">
+                      <td colSpan="5" className="text-center py-20 text-slate-500 font-semibold">
                         {query.trim()
                           ? "Không tìm thấy máy trạm nào đã cài đặt phần mềm này."
                           : "Nhập từ khóa và bấm Tìm kiếm để bắt đầu tra cứu."}

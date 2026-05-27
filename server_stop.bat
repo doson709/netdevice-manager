@@ -10,6 +10,11 @@ echo [+] Dang dung cac tien trinh cua Backend va Frontend...
 :: 1. Tat cac cua so console cmd tuong ung
 taskkill /f /fi "WINDOWTITLE eq NetDevice_Backend*" >nul 2>&1
 taskkill /f /fi "WINDOWTITLE eq NetDevice_Frontend*" >nul 2>&1
+if "%1"=="--keep-tray" (
+    echo [+] Giu lai bieu tuong khay he thong...
+) else (
+    taskkill /f /im pythonw.exe >nul 2>&1
+)
 
 :: 2. Tim va tat cac tien trinh dang chiem dung cong 8085 (Backend) va 5173 (Frontend)
 echo [+] Dang giai phong cong mang 8085...

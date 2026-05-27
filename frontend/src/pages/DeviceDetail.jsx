@@ -30,11 +30,13 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
       const res = await api.getDeviceDetail(deviceId);
       setDetail(res);
       
-      // Khởi tạo các ô nhập liệu metadata chỉnh sửa
-      setClientName(res.device.client_name || res.device.hostname || "");
-      setLocation(res.device.location || "");
-      setDepartment(res.device.department || "");
-      setOwner(res.device.owner || "");
+      // Chỉ khởi tạo/cập nhật các ô nhập liệu khi KHÔNG ở chế độ chỉnh sửa để tránh ghi đè dữ liệu đang gõ dở
+      if (!isEditing) {
+        setClientName(res.device.client_name || res.device.hostname || "");
+        setLocation(res.device.location || "");
+        setDepartment(res.device.department || "");
+        setOwner(res.device.owner || "");
+      }
       
       // Tải lịch sử vẽ biểu đồ tài nguyên
       const histRes = await api.getDeviceHistory(deviceId);
@@ -65,13 +67,18 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
     }
   };
 
+  // 1. Tải dữ liệu ban đầu khi thay đổi thiết bị (chỉ chạy 1 lần)
   useEffect(() => {
     loadData(false);
+  }, [deviceId]);
+
+  // 2. Thiết lập vòng lặp làm mới dữ liệu ngầm mỗi 5 giây (phụ thuộc vào isEditing để nhận closure mới nhất)
+  useEffect(() => {
     const timer = setInterval(() => {
       loadData(true); // Tự động làm mới ngầm mỗi 5 giây
     }, 5000);
     return () => clearInterval(timer);
-  }, [deviceId]);
+  }, [deviceId, isEditing]);
 
   useEffect(() => {
     loadSoftware();

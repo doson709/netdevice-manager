@@ -1,11 +1,12 @@
 import React from "react";
-import { LayoutDashboard, Monitor, Search, RefreshCw, Cpu, Server, Wifi, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Monitor, Search, RefreshCw, Cpu, Server, Wifi, ShieldCheck, Network } from "lucide-react";
 
 export default function Layout({ children, activeTab, setActiveTab }) {
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "devices", label: "Thiết bị mạng", icon: Monitor },
     { id: "software", label: "Tra cứu phần mềm", icon: Search },
+    { id: "topology", label: "Bản đồ mạng", icon: Network },
   ];
 
   return (

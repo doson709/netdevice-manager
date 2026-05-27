@@ -32,6 +32,7 @@ async function apiCall(endpoint, method = "GET", body = null) {
 export const api = {
   // Dashboard
   getDashboardStats: () => apiCall("/api/dashboard"),
+  getServerStats: () => apiCall("/api/dashboard/server"),
 
   // Devices
   getDevices: (params = {}) => {

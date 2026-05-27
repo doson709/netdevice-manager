@@ -8,6 +8,7 @@ echo.
 echo [+] Dang dung cac tien trinh cua Backend va Frontend...
 taskkill /f /fi "WINDOWTITLE eq NetDevice_Backend*" >nul 2>&1
 taskkill /f /fi "WINDOWTITLE eq NetDevice_Frontend*" >nul 2>&1
+taskkill /f /im pythonw.exe >nul 2>&1
 
 :: Giai phong cac cong mang
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8085') do (

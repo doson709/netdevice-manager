@@ -31,6 +31,7 @@ def search_global_software(
         data.append({
             "device_id": dev.device_id,
             "hostname": dev.hostname,
+            "client_name": dev.client_name,
             "owner": dev.owner,
             "department": dev.department,
             "is_online": dev.is_online,

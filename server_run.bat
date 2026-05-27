@@ -5,23 +5,27 @@ echo     NetDevice Manager Server - Khoi chay He thong
 echo =======================================================
 echo.
 
-:: 1. Chay Backend FastAPI
-echo [+] Dang khoi chay Backend FastAPI (Port 8085)...
-start "NetDevice_Backend" cmd /k "cd /d "%~dp0server" && venv\Scripts\python main.py"
+:: 1. Chay Backend FastAPI (Chay ngam, an hoan toan)
+echo [+] Dang khoi chay Backend FastAPI (Port 8085) an...
+powershell -NoProfile -Command "Start-Process -FilePath '%~dp0server\venv\Scripts\python.exe' -ArgumentList 'main.py' -WindowStyle Hidden -WorkingDirectory '%~dp0server'"
 
 :: Doi 2 giay cho backend khoi dong
 timeout /t 2 /nobreak >nul
 
-:: 2. Chay Frontend Vite
-echo [+] Dang khoi chay Frontend Vite React (Port 5173)...
-start "NetDevice_Frontend" cmd /k "cd /d "%~dp0frontend" && npm run dev"
+:: 2. Chay Frontend Vite (Chay ngam, an hoan toan)
+echo [+] Dang khoi chay Frontend Vite React (Port 5173) an...
+powershell -NoProfile -Command "Start-Process -FilePath 'npm.cmd' -ArgumentList 'run dev' -WindowStyle Hidden -WorkingDirectory '%~dp0frontend'"
 
 :: Doi 3 giay cho Vite san sang
 timeout /t 3 /nobreak >nul
 
-:: 3. Tu dong mo trinh duyet
-echo [+] Dang mo trinh duyet truy cap Dashboard...
-start http://localhost:5173
+:: 3. Tu dong khoi chay Khay he thong (Tray Icon)
+echo [+] Dang khoi chay Khay he thong NetDevice Tray...
+if exist "%~dp0venv\Scripts\pythonw.exe" (
+    start "" "%~dp0venv\Scripts\pythonw.exe" "%~dp0server\server_tray.py"
+) else (
+    start "" pythonw "%~dp0server\server_tray.py"
+)
 
 echo.
 echo =======================================================
