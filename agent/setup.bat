@@ -44,11 +44,13 @@ set /p SERVER_URL=<"%TEMP%\_url.txt"
 del "%TEMP%\_url.txt" >nul 2>&1
 
 :: Su dung PowerShell de tao (neu chua co) va cap nhat file config.json
-:: Luu y: Khong sua device_uuid o day — agent.py tu dong lay tu Registry hoac sinh moi
+:: Moi may chay setup se duoc cap UUID moi rieng
 powershell -NoProfile -Command ^
     "$path = '%~dp0config.json';" ^
-    "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=''; report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
+    "$newUuid = [guid]::NewGuid().ToString();" ^
+    "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=$newUuid; report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
     "$json = Get-Content $path -Raw | ConvertFrom-Json;" ^
+    "$json.device_uuid = $newUuid;" ^
     "$json.server_url = '%SERVER_URL%';" ^
     "$json.secret_token = '%TOKEN%';" ^
     "$json.location = '%LOC%';" ^

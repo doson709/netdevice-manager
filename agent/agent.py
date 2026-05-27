@@ -53,36 +53,41 @@ def save_config(config):
 def get_or_create_uuid(config):
     """Lấy hoặc sinh mới UUID thiết bị, đồng bộ hóa tại Registry để chống mất mát."""
     reg_path = r"Software\NetDeviceAgent"
-    
-    # 1. Thử đọc từ Registry trước
+
+    # 1. Ưu tiên UUID từ config.json (do setup.bat tao moi)
+    device_uuid = config.get("device_uuid", "").strip()
+    if device_uuid:
+        # Ghi Registry de backup
+        try:
+            key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
+            winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, device_uuid)
+            winreg.CloseKey(key)
+        except WindowsError:
+            pass
+        return device_uuid
+
+    # 2. Neu config.json rong, thu lay tu Registry (truong hop file config bi xoa)
     try:
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_READ)
         device_uuid, _ = winreg.QueryValueEx(key, "device_uuid")
         winreg.CloseKey(key)
         if device_uuid:
-            # Đồng bộ lại config.json nếu khác biệt
-            if config.get("device_uuid") != device_uuid:
-                config["device_uuid"] = device_uuid
-                save_config(config)
+            config["device_uuid"] = device_uuid
+            save_config(config)
             return device_uuid
     except WindowsError:
         pass
 
-    # 2. Nếu Registry trống, kiểm tra config.json
-    device_uuid = config.get("device_uuid")
-    if not device_uuid:
-        # Sinh mới UUID
-        device_uuid = str(uuid.uuid4())
-        config["device_uuid"] = device_uuid
-        save_config(config)
-
-    # 3. Ghi đè đồng bộ lại Registry
+    # 3. Ca hai de trong → sinh moi UUID
+    device_uuid = str(uuid.uuid4())
+    config["device_uuid"] = device_uuid
+    save_config(config)
     try:
         key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
         winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, device_uuid)
         winreg.CloseKey(key)
-    except WindowsError as e:
-        print(f"Không thể ghi Registry: {e}")
+    except WindowsError:
+        pass
 
     return device_uuid
 
