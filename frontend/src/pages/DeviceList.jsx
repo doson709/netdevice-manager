@@ -17,9 +17,9 @@ export default function DeviceList({ onNavigateToDevice }) {
   const [page, setPage] = useState(1);
   const limit = 15;
 
-  const loadDevices = async () => {
+  const loadDevices = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.getDevices({
         page,
         limit,
@@ -35,13 +35,15 @@ export default function DeviceList({ onNavigateToDevice }) {
     } catch (err) {
       console.error("Lỗi tải danh sách thiết bị:", err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadDevices();
-    const timer = setInterval(loadDevices, 5000); // Tự động làm mới mỗi 5 giây
+    loadDevices(false);
+    const timer = setInterval(() => {
+      loadDevices(true); // Tự động làm mới ngầm mỗi 5 giây
+    }, 5000);
     return () => clearInterval(timer);
   }, [page, search, status, department, location, sortBy, sortDir]);
 

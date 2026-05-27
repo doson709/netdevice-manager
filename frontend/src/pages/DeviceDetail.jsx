@@ -24,9 +24,9 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
   const [department, setDepartment] = useState("");
   const [owner, setOwner] = useState("");
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.getDeviceDetail(deviceId);
       setDetail(res);
       
@@ -44,7 +44,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
     } catch (err) {
       setError("Không thể tải thông tin chi tiết thiết bị này.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -66,8 +66,10 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
   };
 
   useEffect(() => {
-    loadData();
-    const timer = setInterval(loadData, 5000); // Tự động làm mới dữ liệu và biểu đồ mỗi 5 giây
+    loadData(false);
+    const timer = setInterval(() => {
+      loadData(true); // Tự động làm mới ngầm mỗi 5 giây
+    }, 5000);
     return () => clearInterval(timer);
   }, [deviceId]);
 

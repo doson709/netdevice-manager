@@ -10,23 +10,25 @@ export default function Dashboard({ onNavigateToDevice }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.getDashboardStats();
       setStats(res);
       setError("");
     } catch (err) {
       setError("Không thể tải thông tin thống kê từ Server.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
-    // Tự động làm mới mỗi 5 giây
-    const timer = setInterval(loadData, 5000);
+    loadData(false);
+    // Tự động làm mới ngầm mỗi 5 giây
+    const timer = setInterval(() => {
+      loadData(true);
+    }, 5000);
     return () => clearInterval(timer);
   }, []);
 
