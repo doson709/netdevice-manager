@@ -51,7 +51,7 @@ set "ENV_LOC=%LOC%"
 set "ENV_DEP=%DEP%"
 set "ENV_OWNER=%OWNER%"
 
-python -c "import json, os, uuid; path = r'%~dp0config.json'; data = json.load(open(path, 'r', encoding='utf-8-sig')) if os.path.exists(path) else {}; data.update({'device_uuid': str(uuid.uuid4()), 'server_url': os.environ.get('ENV_SERVER_URL'), 'secret_token': os.environ.get('ENV_TOKEN'), 'location': os.environ.get('ENV_LOC'), 'department': os.environ.get('ENV_DEP'), 'owner': os.environ.get('ENV_OWNER'), 'report_interval': data.get('report_interval', 60)}); json.dump(data, open(path, 'w', encoding='utf-8'), indent=4, ensure_ascii=False)"
+python -c "import json, os, winreg; path = r'%~dp0config.json'; k = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'SOFTWARE\Microsoft\Cryptography'); guid, _ = winreg.QueryValueEx(k, 'MachineGuid'); winreg.CloseKey(k); data = json.load(open(path, 'r', encoding='utf-8-sig')) if os.path.exists(path) else {}; data.update({'device_uuid': guid.strip(), 'server_url': os.environ.get('ENV_SERVER_URL'), 'secret_token': os.environ.get('ENV_TOKEN'), 'location': os.environ.get('ENV_LOC'), 'department': os.environ.get('ENV_DEP'), 'owner': os.environ.get('ENV_OWNER'), 'report_interval': data.get('report_interval', 60)}); json.dump(data, open(path, 'w', encoding='utf-8'), indent=4, ensure_ascii=False)"
 
 echo.
 echo [+] Da cap nhat file cau hinh config.json!
