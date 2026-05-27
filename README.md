@@ -6,37 +6,35 @@
 
 ## 📐 Kiến trúc hệ thống
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    MẠNG NỘI BỘ (LAN)                    │
-│                                                         │
-│  ┌──────────┐   ┌──────────┐       ┌──────────┐         │
-│  │ PC Agent │   │ PC Agent │  ...  │ PC Agent │         │
-│  │ (Win)    │   │ (Win)    │       │ (Win)    │         │
-│  └────┬─────┘   └────┬─────┘       └────┬─────┘         │
-│       │ HTTP POST (Header API-Key)       │              │
-│       └───────────────┼──────────────────┘               │
-│                       ▼                                  │
-│              ┌─────────────────┐                         │
-│              │  SERVER (nội bộ)│                         │
-│              │                  │                         │
-│              │  ┌────────────┐  │                         │
-│              │  │ Backend API │  │   ← FastAPI + SQLite   │
-│              │  │ (port 8080) │  │     (WAL Mode)           │
-│              │  └────────────┘  │                         │
-│              │  ┌────────────┐  │                         │
-│              │  │  Frontend   │  │   ← React + Tailwind   │
-│              │  │  Dashboard  │  │     (Recharts)           │
-│              │  └────────────┘  │                         │
-│              └─────────────────┘                         │
-│                       ▲                                  │
-│                       │ HTTP GET (CORS enabled)          │
-│                       │                                  │
-│                 ┌─────┴─────┐                            │
-│                 │ Browser   │                            │
-│                 │ (Admin)   │                            │
-│                 └───────────┘                            │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph LAN ["MẠNG NỘI BỘ (LAN)"]
+        direction TB
+        subgraph Clients ["Máy trạm Client Windows"]
+            direction LR
+            Agent1["PC Agent 1<br>(Python)"]
+            Agent2["PC Agent 2<br>(Python)"]
+            AgentN["PC Agent N<br>(Python)"]
+        end
+
+        subgraph Server ["MÁY CHỦ NỘI BỘ"]
+            direction TB
+            Backend["Backend API<br>(FastAPI)"]
+            Database[("Cơ sở dữ liệu<br>(SQLite - WAL Mode)")]
+            Frontend["Dashboard Frontend<br>(React + Tailwind CSS)"]
+            
+            Backend -->|Ghi/Đọc dữ liệu| Database
+        end
+    end
+
+    Admin["Trình duyệt Admin / Viewer<br>(Browser)"]
+
+    Agent1 -->|HTTP POST<br>Header X-API-Key| Backend
+    Agent2 -->|HTTP POST<br>Header X-API-Key| Backend
+    AgentN -->|HTTP POST<br>Header X-API-Key| Backend
+
+    Admin -->|HTTP GET / CORS| Backend
+    Admin -.->|Truy cập giao diện| Frontend
 ```
 
 ---
