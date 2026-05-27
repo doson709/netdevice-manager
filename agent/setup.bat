@@ -41,11 +41,11 @@ if "%DEP%"=="" set DEP=IT
 if "%OWNER%"=="" set OWNER=Nguyen Van A
 
 :: Su dung PowerShell de tao (neu chua co) va cap nhat file config.json
+:: Luu y: Khong sua device_uuid o day — agent.py tu dong lay tu Registry hoac sinh moi
 powershell -NoProfile -Command ^
     "$path = '%~dp0config.json';" ^
-    "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=[guid]::NewGuid().ToString(); report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
+    "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=''; report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
     "$json = Get-Content $path -Raw | ConvertFrom-Json;" ^
-    "$json.device_uuid = [guid]::NewGuid().ToString();" ^
     "$json.server_url = '%SERVER_URL%';" ^
     "$json.secret_token = '%TOKEN%';" ^
     "$json.location = '%LOC%';" ^
