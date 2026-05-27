@@ -70,7 +70,7 @@ if %errorlevel% EQU 0 (
     echo =======================================================
     echo [SUCCESS] Da cai dat va khoi tao Agent hoan tat!
     echo Tac vu da duoc dang ky tu dong chay ngam bang SYSTEM
-    echo moi khi may tinh khoi dong (an hoan toan, khong hien cua so).
+    echo moi khi may tinh khoi dong [an hoan toan, khong hien cua so].
     echo Dac biet: Agent da duoc KICH HOAT CHAY NGAM NGAY LAP TUC!
     echo =======================================================
 ) else (

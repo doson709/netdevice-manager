@@ -9,6 +9,12 @@ import winreg
 import psutil
 import requests
 
+# Hỗ trợ UTF-8 output cho console trên Windows tránh UnicodeEncodeError
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8')
+
 # Đường dẫn tệp cấu hình
 CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
 
