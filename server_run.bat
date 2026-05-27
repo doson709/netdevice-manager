@@ -7,7 +7,7 @@ echo.
 
 :: 1. Chay Backend FastAPI
 echo [+] Dang khoi chay Backend FastAPI (Port 8085)...
-start "NetDevice_Backend" cmd /k "cd /d "%~dp0server" && call venv\Scripts\activate && python main.py"
+start "NetDevice_Backend" cmd /k "cd /d "%~dp0server" && venv\Scripts\python main.py"
 
 :: Doi 2 giay cho backend khoi dong
 timeout /t 2 /nobreak >nul

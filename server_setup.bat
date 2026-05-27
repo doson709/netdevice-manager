@@ -11,10 +11,14 @@ cd /d "%~dp0server"
 if not exist venv (
     echo [+] Dang tao moi truong ao Python (venv)...
     python -m venv venv
+    if %errorlevel% neq 0 (
+        echo [ERROR] Tao moi truong ao that bai! Vui long kiem tra Python da cai dat chua.
+        pause
+        exit /b 1
+    )
 )
-echo [+] Dang kich hoat venv va cai dat dependencies...
-call venv\Scripts\activate
-pip install -r requirements.txt
+echo [+] Dang cai dat dependencies vao venv...
+venv\Scripts\pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo [ERROR] Cai dat dependencies Backend that bai!
     pause

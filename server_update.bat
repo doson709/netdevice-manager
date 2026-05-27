@@ -17,8 +17,7 @@ echo.
 echo [+] Dang tu dong nang cap cac dependencies cua Backend...
 cd /d "%~dp0server"
 if exist venv (
-    call venv\Scripts\activate
-    pip install -r requirements.txt
+    venv\Scripts\pip install -r requirements.txt
 ) else (
     echo [INFO] Chua khoi tao venv. Vui long chay server_setup.bat truoc.
 )
