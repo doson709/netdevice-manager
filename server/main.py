@@ -272,5 +272,5 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    # Khởi chạy server tại cổng 8080
-    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)
+    # Khởi chạy server tại cổng 8085 (tránh xung đột với httpd cổng 8080)
+    uvicorn.run("main:app", host="0.0.0.0", port=8085, reload=False)

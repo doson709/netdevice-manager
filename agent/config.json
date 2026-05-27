@@ -1,5 +1,5 @@
 {
-    "server_url": "http://localhost:8080",
+    "server_url": "http://localhost:8085",
     "secret_token": "secure-intranet-token-123",
     "device_uuid": "",
     "report_interval": 60,
