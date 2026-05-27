@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8085";
+const API_BASE_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8085`;
 
 /**
  * Hàm chung thực hiện gọi API fetch kèm xử lý lỗi
