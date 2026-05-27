@@ -115,6 +115,29 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
             "message": f"Thiết bị mất kết nối từ lúc {dev.last_seen.strftime('%Y-%m-%d %H:%M:%S')}"
         })
 
+    # Lấy danh sách IP mạng nội bộ của máy chủ để hiển thị link truy cập
+    import socket
+    server_ips = []
+    try:
+        hostname = socket.gethostname()
+        for item in socket.getaddrinfo(hostname, None):
+            ip = item[4][0]
+            if ":" not in ip and not ip.startswith("127."):
+                if ip not in server_ips:
+                    server_ips.append(ip)
+    except Exception:
+        pass
+        
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        main_ip = s.getsockname()[0]
+        s.close()
+        if main_ip not in server_ips and not main_ip.startswith("127."):
+            server_ips.insert(0, main_ip)
+    except Exception:
+        pass
+
     return {
         "total_devices": total_devices,
         "online_devices": online_devices,
@@ -123,5 +146,6 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "avg_ram_usage": avg_ram,
         "departments": departments,
         "os_distribution": os_distribution,
-        "alerts": alerts[:15] # Trả về top 15 cảnh báo mới nhất
+        "alerts": alerts[:15], # Trả về top 15 cảnh báo mới nhất
+        "server_ips": server_ips
     }
