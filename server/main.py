@@ -15,6 +15,38 @@ from routes import devices, dashboard, reports
 # Khởi tạo bảng cơ sở dữ liệu nếu chưa tồn tại
 Base.metadata.create_all(bind=engine)
 
+# =====================================================================
+#  Auto-migration: Bổ sung các cột mới vào bảng đã tồn tại trong SQLite
+#  (SQLAlchemy create_all chỉ tạo bảng mới, không thêm cột vào bảng cũ)
+# =====================================================================
+def auto_migrate():
+    """Kiểm tra và bổ sung các cột còn thiếu trong cơ sở dữ liệu hiện có."""
+    import sqlite3
+    from database import DB_PATH
+
+    migrations = [
+        # (tên_bảng, tên_cột, kiểu_dữ_liệu, giá_trị_mặc_định)
+        ("devices", "client_name", "TEXT", None),
+    ]
+
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        for table, column, col_type, default in migrations:
+            cursor.execute(f"PRAGMA table_info({table})")
+            existing_cols = [row[1] for row in cursor.fetchall()]
+            if column not in existing_cols:
+                default_clause = f" DEFAULT '{default}'" if default is not None else ""
+                alter_sql = f"ALTER TABLE {table} ADD COLUMN {column} {col_type}{default_clause}"
+                cursor.execute(alter_sql)
+                print(f"[Migration] Da bo sung cot '{column}' vao bang '{table}'.")
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Migration] Loi khi kiem tra/cap nhat schema: {e}")
+
+auto_migrate()
+
 app = FastAPI(
     title="NetDevice Manager API",
     description="Backend quản lý, giám sát thiết bị máy tính tập trung trong mạng nội bộ.",
