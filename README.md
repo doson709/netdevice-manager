@@ -47,6 +47,7 @@ netdevice-manager/
 ├── server_run.bat            # File khởi chạy đồng thời Backend & Frontend
 ├── server_stop.bat           # File dừng toàn bộ các tiến trình Server
 ├── server_update.bat         # File cập nhật code mới từ Git & nâng cấp dependencies
+├── server_uninstall.bat      # File gỡ bỏ sạch sẽ môi trường và database Server
 ├── agent/                    # Cấu phần cài trên client máy khách
 │   ├── agent.py              # Script thu thập dữ liệu (PowerShell/winreg/UUID/API-Key)
 │   ├── config.json           # Cấu hình địa chỉ server, token và UUID trạm
@@ -55,6 +56,7 @@ netdevice-manager/
 │   ├── run.bat               # Script khởi chạy Console & kích hoạt Task chạy ngầm
 │   ├── stop.bat              # Script dừng cả tiến trình Console lẫn Task chạy ngầm
 │   ├── update.bat            # Script tự động cập nhật code Agent mới nhất từ Repo
+│   ├── uninstall.bat         # File gỡ cài đặt, tắt chạy ngầm & xoá UUID Registry
 │   ├── install.bat           # File cài đặt phụ trợ (được gọi bởi setup.bat)
 │   └── README.md             # Hướng dẫn chi tiết cài đặt Agent
 │
@@ -106,6 +108,7 @@ Các kịch bản lệnh được đặt ngay tại **thư mục gốc** của d
 2.  **Khởi chạy hệ thống (Run):** Kích hoạt [server_run.bat](file:///server_run.bat) để khởi động song song Backend API (Cổng `8085`), Frontend Web (Cổng `5173`), và tự động mở trình duyệt truy cập thẳng vào Dashboard.
 3.  **Dừng hệ thống (Stop):** Kích hoạt [server_stop.bat](file:///server_stop.bat) để tắt sạch các cửa sổ console đang chạy ngầm và giải phóng các cổng mạng an toàn.
 4.  **Cập nhật hệ thống (Update):** Kích hoạt [server_update.bat](file:///server_update.bat) để tự động kéo mã nguồn mới nhất từ Git Repository và nâng cấp các dependencies Backend/Frontend tương ứng chỉ với 1 cú nhấp chuột.
+5.  **Gỡ bỏ dịch vụ (Uninstall):** Kích hoạt [server_uninstall.bat](file:///server_uninstall.bat) để dừng toàn bộ dịch vụ, giải phóng cổng mạng, giải phóng môi trường Python venv/node_modules và tùy chọn xóa sạch cơ sở dữ liệu lịch sử.
 
 ### B. Quản lý Máy khách (Client - Agent giám sát)
 Các kịch bản lệnh nằm bên trong thư mục [agent/](file:///agent/) trên máy khách:
@@ -113,6 +116,7 @@ Các kịch bản lệnh nằm bên trong thư mục [agent/](file:///agent/) tr
 2.  **Chạy thử nghiệm (Run):** Kích hoạt [agent/run.bat](file:///agent/run.bat) để chạy console theo dõi trực tiếp logs gửi dữ liệu thời gian thực về Server.
 3.  **Dừng giám sát (Stop):** Kích hoạt [agent/stop.bat](file:///agent/stop.bat) để tạm dừng cả tiến trình console lẫn dịch vụ chạy ngầm trên máy trạm.
 4.  **Cập nhật Agent (Update):** Kích hoạt [agent/update.bat](file:///agent/update.bat) để tự động nâng cấp tệp `agent.py` và dependencies lên phiên bản mới nhất từ Git (đối với môi trường Dev) hoặc tải trực tiếp mã nguồn từ GitHub (đối với máy trạm độc lập).
+5.  **Gỡ bỏ giám sát (Uninstall):** Nhấp chuột phải vào [agent/uninstall.bat](file:///agent/uninstall.bat) -> Chọn **Run as Administrator**. Script sẽ dừng và xóa sạch Task chạy ngầm trong Windows Task Scheduler, xóa mã UUID trong Registry và tùy chọn dọn sạch file cấu hình.
 
 ---
 
