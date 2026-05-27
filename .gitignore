@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+/server/venv/
+/server/netdevice.db
+/server/netdevice.db-journal
+/server/netdevice.db-wal
+/server/netdevice.db-shm
+
+# Node / React
+node_modules/
+/frontend/node_modules/
+/frontend/dist/
+dist/
+.eslintcache
+
+# Env / Secrets
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

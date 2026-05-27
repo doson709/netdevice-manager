@@ -1,0 +1,9 @@
+{
+    "server_url": "http://localhost:8080",
+    "secret_token": "secure-intranet-token-123",
+    "device_uuid": "",
+    "report_interval": 60,
+    "location": "Phòng IT, Tầng 2",
+    "department": "IT",
+    "owner": "Nguyễn Văn A"
+}
