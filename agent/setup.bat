@@ -8,7 +8,7 @@ echo.
 
 :: Kiem tra quyen Administrator
 openfiles >nul 2>&1
-if !errorlevel! neq 0 (
+if !errorlevel! NEQ 0 (
     echo [ERROR] Vui long nhap chuot phai vao file setup.bat va chon "Run as Administrator"!
     echo.
     pause
@@ -17,7 +17,7 @@ if !errorlevel! neq 0 (
 
 echo [+] Dang cai dat cac thu vien Python bat buoc...
 pip install -r "%~dp0requirements.txt"
-if !errorlevel! neq 0 (
+if !errorlevel! NEQ 0 (
     echo [WARNING] Co loi xay ra khi cai dat thu vien. Vui long kiem tra lai phien ban Python va pip.
 )
 

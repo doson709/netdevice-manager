@@ -10,9 +10,9 @@ echo.
 echo [+] Dang thiet lap Backend FastAPI...
 cd /d "%~dp0server"
 if not exist venv (
-    echo [+] Dang tao moi truong ao Python (venv)...
+    echo [+] Dang tao moi truong ao Python [venv]...
     python -m venv venv
-    if !errorlevel! neq 0 (
+    if !errorlevel! NEQ 0 (
         echo [ERROR] Tao moi truong ao that bai! Vui long kiem tra Python da cai dat chua.
         pause
         exit /b 1
@@ -20,7 +20,7 @@ if not exist venv (
 )
 echo [+] Dang cai dat dependencies vao venv...
 venv\Scripts\pip install -r requirements.txt
-if !errorlevel! neq 0 (
+if !errorlevel! NEQ 0 (
     echo [ERROR] Cai dat dependencies Backend that bai!
     pause
     exit /b 1
@@ -33,7 +33,7 @@ echo [+] Dang thiet lap Frontend React...
 cd /d "%~dp0frontend"
 echo [+] Dang cai dat cac thu vien Node.js (npm)...
 call npm install
-if !errorlevel! neq 0 (
+if !errorlevel! NEQ 0 (
     echo [ERROR] Cai dat dependencies Frontend that bai!
     echo [TIP] Vui long kiem tra xem da cai dat Node.js va npm chua.
     pause

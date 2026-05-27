@@ -7,7 +7,7 @@ echo.
 
 :: Kiem tra quyen Administrator
 openfiles >nul 2>&1
-if %errorlevel% neq 0 (
+if %errorlevel% NEQ 0 (
     echo [ERROR] Vui long nhap chuot phai vao file uninstall.bat va chon "Run as Administrator"!
     echo.
     pause

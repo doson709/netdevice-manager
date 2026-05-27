@@ -7,7 +7,7 @@ echo.
 
 echo [+] Dang keo ma nguon moi nhat tu Git Repository...
 git pull
-if %errorlevel% neq 0 (
+if %errorlevel% NEQ 0 (
     echo [ERROR] Keo ma nguon that bai. Vui long kiem tra ket noi Git/Internet!
     pause
     exit /b 1
