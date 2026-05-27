@@ -74,7 +74,7 @@ export default function Layout({ children, activeTab, setActiveTab }) {
             <div className="flex items-center gap-2 text-xs bg-slate-950 border border-slate-800/80 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               <span className="text-slate-400">Server API:</span>
-              <span className="text-slate-300 font-semibold">Online (8080)</span>
+              <span className="text-slate-300 font-semibold">Online (8085)</span>
             </div>
           </div>
         </header>

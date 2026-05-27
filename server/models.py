@@ -1,8 +1,15 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel
+
+# Múi giờ Việt Nam (UTC+7)
+VN_TZ = timezone(timedelta(hours=7))
+
+def vn_now():
+    """Trả về thời gian hiện tại theo múi giờ Việt Nam (UTC+7)."""
+    return datetime.now(VN_TZ)
 
 from database import Base
 
@@ -24,8 +31,8 @@ class Device(Base):
     location = Column(String, index=True)
     department = Column(String, index=True)
     owner = Column(String, index=True)
-    first_seen = Column(DateTime, default=datetime.utcnow)
-    last_seen = Column(DateTime, default=datetime.utcnow)
+    first_seen = Column(DateTime, default=vn_now)
+    last_seen = Column(DateTime, default=vn_now)
     is_online = Column(Boolean, default=True)
 
     # Quan hệ
@@ -37,7 +44,7 @@ class HardwareSnapshot(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     device_id = Column(String, ForeignKey("devices.device_id", ondelete="CASCADE"), index=True)
-    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+    timestamp = Column(DateTime, default=vn_now, index=True)
     cpu_model = Column(String)
     cpu_cores = Column(Integer)
     cpu_usage = Column(Float)
@@ -78,7 +85,7 @@ class Software(Base):
     name = Column(String, index=True)
     version = Column(String)
     publisher = Column(String)
-    discovered_at = Column(DateTime, default=datetime.utcnow)
+    discovered_at = Column(DateTime, default=vn_now)
 
     __table_args__ = (
         UniqueConstraint("device_id", "name", name="uq_device_software"),

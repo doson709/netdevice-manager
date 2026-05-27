@@ -1,5 +1,6 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
+from models import vn_now
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -188,7 +189,7 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
 @router.get("/{device_id}/history")
 def get_device_history(device_id: str, db: Session = Depends(get_db), hours: int = 24):
     """Lấy lịch sử tài nguyên CPU & RAM của thiết bị (mặc định 24 giờ qua) để vẽ biểu đồ."""
-    time_threshold = datetime.utcnow() - timedelta(hours=hours)
+    time_threshold = vn_now() - timedelta(hours=hours)
     
     snapshots = db.query(HardwareSnapshot).filter(
         and_(

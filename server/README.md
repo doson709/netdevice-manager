@@ -4,7 +4,7 @@
 
 ## Yêu cầu môi trường
 *   Python 3.8+
-*   Port 8080 còn trống (hoặc có thể cấu hình lại)
+*   Port 8085 còn trống (hoặc có thể cấu hình lại)
 
 ## Hướng dẫn khởi chạy nhanh
 
@@ -30,14 +30,14 @@
     ```bash
     python main.py
     ```
-    Ứng dụng sẽ chạy tại cổng **8080** (`http://localhost:8080`).
+    Ứng dụng sẽ chạy tại cổng **8085** (`http://localhost:8085`).
 
 ## Các tham số môi trường (Tùy chọn)
 *   **`NETDEVICE_SECRET_TOKEN`**: Khóa Token bảo mật để xác thực Agent. Mặc định là `secure-intranet-token-123`.
 
 ## Tài liệu API tự động (Swagger)
 Khi Server đang khởi chạy, bạn có thể truy cập tài liệu hướng dẫn API đầy đủ tại đường dẫn:
-`http://localhost:8080/docs` hoặc `http://localhost:8080/redoc`
+`http://localhost:8085/docs` hoặc `http://localhost:8085/redoc`
 
 ## Cấu hình tường lửa (Firewall)
-*   Nếu bạn chạy Server trên máy chủ và muốn các máy khách trong mạng LAN kết nối được, vui lòng mở **Inbound Port 8080** trên Windows Firewall (hoặc Firewall của máy chủ).
+*   Nếu bạn chạy Server trên máy chủ và muốn các máy khách trong mạng LAN kết nối được, vui lòng mở **Inbound Port 8085** trên Windows Firewall (hoặc Firewall của máy chủ).

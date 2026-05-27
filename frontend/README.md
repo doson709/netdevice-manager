@@ -26,9 +26,9 @@
     Giao diện Dashboard sẽ mở tại đường dẫn: `http://localhost:5173`.
 
 ## Cấu hình kết nối API
-Mặc định, Frontend sẽ kết nối tới Backend tại `http://localhost:8080`. Nếu Backend của bạn chạy trên một IP hoặc cổng khác, bạn có thể tạo tệp `.env` tại thư mục gốc `frontend/` và cấu hình:
+Mặc định, Frontend sẽ kết nối tới Backend tại `http://localhost:8085`. Nếu Backend của bạn chạy trên một IP hoặc cổng khác, bạn có thể tạo tệp `.env` tại thư mục gốc `frontend/` và cấu hình:
 ```env
-VITE_API_URL=http://<IP-SERVER-CUA-BAN>:8080
+VITE_API_URL=http://<IP-SERVER-CUA-BAN>:8085
 ```
 
 ## Đóng gói sản phẩm (Production Build)

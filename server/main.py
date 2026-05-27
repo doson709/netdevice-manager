@@ -3,10 +3,10 @@ import json
 import asyncio
 import threading
 from datetime import datetime, timedelta
+from models import vn_now
 from fastapi import FastAPI, Depends, Header, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
 
 from database import engine, Base, get_db, SessionLocal
 from models import Device, HardwareSnapshot, DiskSnapshot, Software, NetworkSnapshot, ReportPayload
@@ -90,7 +90,7 @@ def receive_agent_report(
         )
         
     try:
-        now = datetime.utcnow()
+        now = vn_now()
         
         # 2. Xử lý ghi nhận thiết bị (Devices)
         device = db.query(Device).filter(Device.device_id == payload.device_id).first()
@@ -240,12 +240,12 @@ def background_agent_status_monitor():
     while not shutdown_event.is_set():
         try:
             db = SessionLocal()
-            five_minutes_ago = datetime.utcnow() - timedelta(minutes=5)
+            two_minutes_ago = vn_now() - timedelta(minutes=2)
             
-            # Quét các thiết bị online nhưng thời gian báo cáo cuối vượt quá 5 phút
+            # Quét các thiết bị online nhưng thời gian báo cáo cuối vượt quá 2 phút
             stale_devices = db.query(Device).filter(
-                (Device.is_online == True) & 
-                (Device.last_seen < five_minutes_ago)
+                (Device.is_online == True) &
+                (Device.last_seen < two_minutes_ago)
             ).all()
             
             if stale_devices:
@@ -266,7 +266,7 @@ def background_db_cleanup_task():
     while not shutdown_event.is_set():
         try:
             db = SessionLocal()
-            thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+            thirty_days_ago = vn_now() - timedelta(days=30)
             
             # Xóa các snapshots cũ (quan hệ cascading sẽ tự xóa disk & network snaps)
             deleted_count = db.query(HardwareSnapshot).filter(

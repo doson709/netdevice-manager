@@ -3,6 +3,7 @@ import sys
 import json
 import time
 import uuid
+import socket
 import platform
 import subprocess
 import winreg
@@ -23,7 +24,7 @@ def load_config():
     if not os.path.exists(CONFIG_PATH):
         # Tạo tệp cấu hình mặc định nếu chưa tồn tại
         default_config = {
-            "server_url": "http://localhost:8080",
+            "server_url": "http://localhost:8085",
             "secret_token": "secure-intranet-token-123",
             "device_uuid": "",
             "report_interval": 60,
@@ -304,9 +305,6 @@ def get_active_network_info():
         
     return adapters, main_ip, main_mac
 
-# Sửa lỗi import thiếu socket ở trên
-import socket
-
 def collect_all_data(config):
     """Tổng hợp toàn bộ thông tin của máy trạm."""
     print("Bắt đầu thu thập dữ liệu hệ thống...")
@@ -438,7 +436,7 @@ def collect_all_data(config):
 
 def send_report(config, payload):
     """Gửi dữ liệu báo cáo về FastAPI Server tập trung."""
-    server_url = config.get("server_url", "http://localhost:8080")
+    server_url = config.get("server_url", "http://localhost:8085")
     report_endpoint = f"{server_url.rstrip('/')}/api/report"
     token = config.get("secret_token", "")
     

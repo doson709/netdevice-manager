@@ -57,7 +57,6 @@ netdevice-manager/
 │   ├── stop.bat              # Script dừng cả tiến trình Console lẫn Task chạy ngầm
 │   ├── update.bat            # Script tự động cập nhật code Agent mới nhất từ Repo
 │   ├── uninstall.bat         # File gỡ cài đặt, tắt chạy ngầm & xoá UUID Registry
-│   ├── install.bat           # File cài đặt phụ trợ (được gọi bởi setup.bat)
 │   └── README.md             # Hướng dẫn chi tiết cài đặt Agent
 │
 ├── server/                   # Cấu phần Server Backend
