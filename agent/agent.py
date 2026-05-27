@@ -118,7 +118,7 @@ def get_or_create_uuid(config):
                 pass
             return config_uuid
 
-def run_powershell(cmd, timeout=30):
+def run_powershell(cmd, timeout=30, silent=False):
     """Chạy lệnh PowerShell ẩn không hiện cửa sổ cmd phụ."""
     try:
         startupinfo = subprocess.STARTUPINFO()
@@ -136,7 +136,8 @@ def run_powershell(cmd, timeout=30):
         if process.returncode == 0:
             return stdout.strip()
     except Exception as e:
-        print(f"Lỗi chạy PowerShell: {e}")
+        if not silent:
+            print(f"Lỗi chạy PowerShell: {e}")
     return ""
 
 def get_system_uptime():
@@ -216,19 +217,30 @@ def get_hardware_info():
 
     return motherboard, bios
 
+_cached_activation = None
+
 def get_windows_activation():
-    """Kiểm tra trạng thái kích hoạt bản quyền Windows."""
+    """Kiểm tra trạng thái kích hoạt bản quyền Windows (có bộ nhớ đệm tránh truy vấn lặp lại gây lag)."""
+    global _cached_activation
+    if _cached_activation is not None:
+        return _cached_activation
+
     # Sử dụng bộ lọc CIM trực tiếp ở cấp WMI để tối ưu hóa hiệu năng cực cao, tránh quét toàn bộ các sản phẩm khác (như Office) gây treo/lag
     cmd = 'Get-CimInstance -ClassName SoftwareLicensingProduct -Filter "Name LIKE \'Windows%\' AND LicenseStatus = 1" | Select-Object -First 1 | ConvertTo-Json'
-    res = run_powershell(cmd, timeout=5)
+    # Đặt timeout ngắn và chạy ẩn (silent) tránh in thông báo lỗi làm phiền console khi gặp máy trạm có WMI bị đơ/lag
+    res = run_powershell(cmd, timeout=5, silent=True)
     if res:
         try:
             data = json.loads(res)
             if data:
-                return "Activated"
+                _cached_activation = "Activated"
+                return _cached_activation
         except Exception:
             pass
-    return "Not Activated / Trial"
+    
+    # Ghi nhận kết quả mặc định nếu hết thời gian truy vấn (timeout)
+    _cached_activation = "Not Activated / Trial"
+    return _cached_activation
 
 def get_installed_software():
     """Quét danh sách các phần mềm đã cài đặt từ Windows Registry."""
