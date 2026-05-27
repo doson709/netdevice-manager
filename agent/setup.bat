@@ -43,20 +43,14 @@ powershell -NoProfile -Command "$u='%SERVER_URL%'; if ($u -notmatch '^https?://'
 set /p SERVER_URL=<"%TEMP%\_url.txt"
 del "%TEMP%\_url.txt" >nul 2>&1
 
-:: Su dung PowerShell de tao (neu chua co) va cap nhat file config.json
-:: Moi may chay setup se duoc cap UUID moi rieng
-powershell -NoProfile -Command ^
-    "$path = '%~dp0config.json';" ^
-    "$newUuid = [guid]::NewGuid().ToString();" ^
-    "if (-not (Test-Path $path)) { $default = @{ server_url='http://localhost:8085'; secret_token='secure-intranet-token-123'; device_uuid=$newUuid; report_interval=60; location=''; department=''; owner='' }; $default | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8 };" ^
-    "$json = Get-Content $path -Raw | ConvertFrom-Json;" ^
-    "$json.device_uuid = $newUuid;" ^
-    "$json.server_url = '%SERVER_URL%';" ^
-    "$json.secret_token = '%TOKEN%';" ^
-    "$json.location = '%LOC%';" ^
-    "$json.department = '%DEP%';" ^
-    "$json.owner = '%OWNER%';" ^
-    "$json | ConvertTo-Json -Depth 10 | Set-Content $path -Encoding UTF8"
+:: Su dung Python de tao va cap nhat file config.json thong qua bien moi truong de tranh loi ky tu dac biet, dau nhay va bao mat
+set "ENV_SERVER_URL=%SERVER_URL%"
+set "ENV_TOKEN=%TOKEN%"
+set "ENV_LOC=%LOC%"
+set "ENV_DEP=%DEP%"
+set "ENV_OWNER=%OWNER%"
+
+python -c "import json, os, uuid; path = r'%~dp0config.json'; data = json.load(open(path, 'r', encoding='utf-8-sig')) if os.path.exists(path) else {}; data.update({'device_uuid': str(uuid.uuid4()), 'server_url': os.environ.get('ENV_SERVER_URL'), 'secret_token': os.environ.get('ENV_TOKEN'), 'location': os.environ.get('ENV_LOC'), 'department': os.environ.get('ENV_DEP'), 'owner': os.environ.get('ENV_OWNER'), 'report_interval': data.get('report_interval', 60)}); json.dump(data, open(path, 'w', encoding='utf-8'), indent=4, ensure_ascii=False)"
 
 echo.
 echo [+] Da cap nhat file cau hinh config.json!

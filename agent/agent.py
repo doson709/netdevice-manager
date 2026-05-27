@@ -51,13 +51,27 @@ def save_config(config):
         print(f"Lỗi ghi tệp cấu hình: {e}")
 
 def get_or_create_uuid(config):
-    """Lấy hoặc sinh mới UUID thiết bị, đồng bộ hóa tại Registry để chống mất mát."""
+    """Lấy hoặc sinh mới UUID thiết bị, đồng bộ hóa tại Registry để chống mất mát và phát hiện sao chép thư mục."""
     reg_path = r"Software\NetDeviceAgent"
 
-    # 1. Ưu tiên UUID từ config.json (do setup.bat tao moi)
-    device_uuid = config.get("device_uuid", "").strip()
-    if device_uuid:
-        # Ghi Registry de backup
+    # Đọc từ Registry trước để kiểm tra trạng thái máy hiện tại
+    reg_uuid = ""
+    try:
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_READ)
+        reg_uuid, _ = winreg.QueryValueEx(key, "device_uuid")
+        winreg.CloseKey(key)
+        reg_uuid = reg_uuid.strip()
+    except WindowsError:
+        pass
+
+    # Đọc từ config.json
+    config_uuid = config.get("device_uuid", "").strip()
+
+    # 1. Cả Registry và config.json đều rỗng -> Sinh mới UUID
+    if not reg_uuid and not config_uuid:
+        device_uuid = str(uuid.uuid4())
+        config["device_uuid"] = device_uuid
+        save_config(config)
         try:
             key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
             winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, device_uuid)
@@ -66,30 +80,43 @@ def get_or_create_uuid(config):
             pass
         return device_uuid
 
-    # 2. Neu config.json rong, thu lay tu Registry (truong hop file config bi xoa)
-    try:
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, reg_path, 0, winreg.KEY_READ)
-        device_uuid, _ = winreg.QueryValueEx(key, "device_uuid")
-        winreg.CloseKey(key)
-        if device_uuid:
-            config["device_uuid"] = device_uuid
-            save_config(config)
-            return device_uuid
-    except WindowsError:
-        pass
+    # 2. Registry rỗng nhưng config.json có UUID
+    # Đây là dấu hiệu rõ ràng của việc SAO CHÉP thư mục agent từ máy khác sang máy mới
+    elif not reg_uuid and config_uuid:
+        # Sinh UUID mới hoàn toàn cho máy trạm này để tránh trùng lặp trên Dashboard
+        device_uuid = str(uuid.uuid4())
+        config["device_uuid"] = device_uuid
+        save_config(config)
+        try:
+            key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
+            winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, device_uuid)
+            winreg.CloseKey(key)
+        except WindowsError:
+            pass
+        print(f"[UUID] Phat hien sao chep thu muc. Da tao UUID moi cho thiet bi: {device_uuid}")
+        return device_uuid
 
-    # 3. Ca hai de trong → sinh moi UUID
-    device_uuid = str(uuid.uuid4())
-    config["device_uuid"] = device_uuid
-    save_config(config)
-    try:
-        key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
-        winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, device_uuid)
-        winreg.CloseKey(key)
-    except WindowsError:
-        pass
+    # 3. Registry đã có UUID nhưng config.json rỗng (do file config bị xóa hoặc bị ghi đè)
+    elif reg_uuid and not config_uuid:
+        # Đồng bộ ngược từ Registry vào config.json
+        config["device_uuid"] = reg_uuid
+        save_config(config)
+        return reg_uuid
 
-    return device_uuid
+    # 4. Cả hai đều đã có UUID
+    else:
+        if reg_uuid == config_uuid:
+            return reg_uuid
+        else:
+            # Nếu khác nhau (ví dụ người dùng chạy setup.bat để cấu hình lại máy với UUID mới)
+            # Ưu tiên UUID từ config.json và ghi đè Registry để backup
+            try:
+                key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, reg_path)
+                winreg.SetValueEx(key, "device_uuid", 0, winreg.REG_SZ, config_uuid)
+                winreg.CloseKey(key)
+            except WindowsError:
+                pass
+            return config_uuid
 
 def run_powershell(cmd):
     """Chạy lệnh PowerShell ẩn không hiện cửa sổ cmd phụ."""
