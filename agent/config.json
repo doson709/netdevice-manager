@@ -1,9 +1,0 @@
-{
-    "department": "hop",
-    "device_uuid": "db75a58a-e811-4925-80dc-51deab89ec1c",
-    "report_interval": 60,
-    "owner": "nguyen van c",
-    "server_url": "http://localhost:8085",
-    "location": "Phong hop",
-    "secret_token": "secure-intranet-token-123"
-}
