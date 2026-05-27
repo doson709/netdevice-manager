@@ -4,7 +4,7 @@ from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Foreig
 from sqlalchemy.orm import relationship
 from pydantic import BaseModel
 
-from .database import Base
+from database import Base
 
 # =====================================================================
 #                      SQLALCHEMY ORM MODELS
