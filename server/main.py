@@ -214,10 +214,10 @@ def background_agent_status_monitor():
             if stale_devices:
                 for d in stale_devices:
                     d.is_online = False
-                    print(f"[MONITOR] Thiết bị {d.hostname} ({d.device_id}) mất tín hiệu -> Chuyển sang Offline")
+                    print(f"[MONITOR] Thiet bi {d.hostname} ({d.device_id}) mat tin hieu -> Chuyen sang Offline")
                 db.commit()
         except Exception as e:
-            print(f"[MONITOR ERROR] Lỗi vòng lặp quét trạng thái: {e}")
+            print(f"[MONITOR ERROR] Loi vong lap quet trang thai: {e}")
         finally:
             db.close()
             
@@ -238,9 +238,9 @@ def background_db_cleanup_task():
             
             if deleted_count > 0:
                 db.commit()
-                print(f"[CLEANUP] Đã xóa thành công {deleted_count} bản ghi snapshots cũ hơn 30 ngày.")
+                print(f"[CLEANUP] Da xoa thanh cong {deleted_count} ban ghi snapshots cu hon 30 ngay.")
         except Exception as e:
-            print(f"[CLEANUP ERROR] Lỗi vòng lặp dọn dẹp: {e}")
+            print(f"[CLEANUP ERROR] Loi vong lap don dep: {e}")
         finally:
             db.close()
             
@@ -255,13 +255,13 @@ def startup_event():
     
     monitor_thread.start()
     cleanup_thread.start()
-    print("=== Khởi động các tiến trình giám sát chạy ngầm ===")
+    print("=== Khoi dong cac tien trinh giam sat chay ngam ===")
 
 @app.on_event("shutdown")
 def shutdown_event_handler():
     """Dừng các tiến trình chạy ngầm một cách an toàn."""
     shutdown_event.set()
-    print("=== Dừng tiến trình chạy ngầm an toàn ===")
+    print("=== Dung tien trinh chay ngam an toan ===")
 
 @app.get("/")
 def read_root():
