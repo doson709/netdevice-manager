@@ -105,6 +105,7 @@ def receive_agent_report(
         gpu_json = json.dumps([g.dict() for g in payload.gpu_info], ensure_ascii=False)
         board_json = json.dumps(payload.motherboard.dict(), ensure_ascii=False)
         bios_json = json.dumps(payload.bios.dict(), ensure_ascii=False)
+        proc_json = json.dumps([p.dict() for p in payload.processes], ensure_ascii=False)
         
         snapshot = HardwareSnapshot(
             device_id=payload.device_id,
@@ -118,7 +119,8 @@ def receive_agent_report(
             gpu_info=gpu_json,
             motherboard=board_json,
             bios=bios_json,
-            uptime_seconds=payload.uptime_seconds
+            uptime_seconds=payload.uptime_seconds,
+            running_processes=proc_json
         )
         db.add(snapshot)
         db.flush() # Lấy snapshot.id để tạo Disk & Network snaps

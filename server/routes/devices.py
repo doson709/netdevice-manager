@@ -114,6 +114,7 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
         gpu_info = []
         motherboard = {}
         bios = {}
+        running_processes = []
         try:
             if latest_snap.gpu_info:
                 gpu_info = json.loads(latest_snap.gpu_info)
@@ -121,6 +122,8 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
                 motherboard = json.loads(latest_snap.motherboard)
             if latest_snap.bios:
                 bios = json.loads(latest_snap.bios)
+            if hasattr(latest_snap, 'running_processes') and latest_snap.running_processes:
+                running_processes = json.loads(latest_snap.running_processes)
         except Exception:
             pass
 
@@ -154,7 +157,8 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
             "gpu_info": gpu_info,
             "motherboard": motherboard,
             "bios": bios,
-            "uptime_seconds": latest_snap.uptime_seconds
+            "uptime_seconds": latest_snap.uptime_seconds,
+            "running_processes": running_processes
         }
         
     return {

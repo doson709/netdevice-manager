@@ -47,6 +47,7 @@ class HardwareSnapshot(Base):
     motherboard = Column(String)       # Chuỗi JSON lưu trữ Motherboard dict
     bios = Column(String)              # Chuỗi JSON lưu trữ BIOS dict
     uptime_seconds = Column(Float)
+    running_processes = Column(String) # Chuỗi JSON lưu trữ danh sách tiến trình đang chạy
 
     # Quan hệ
     device = relationship("Device", back_populates="hardware_snapshots")

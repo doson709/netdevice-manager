@@ -509,6 +509,50 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
           </div>
         )}
       </div>
+
+      {/* RUNNING PROCESSES LIST (ACTIVE APPLICATIONS) */}
+      <div className="glass-panel p-6 rounded-2xl space-y-6 shadow-2xl animate-fade-in">
+        <div>
+          <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-emerald-400 animate-pulse" /> Tiến trình & Ứng dụng đang hoạt động ({latest_snapshot.running_processes?.length || 0})
+          </h4>
+          <p className="text-[10px] text-slate-500 mt-1 font-semibold uppercase">
+            Top 20 ứng dụng tiêu thụ RAM hàng đầu hệ thống máy trạm
+          </p>
+        </div>
+
+        {/* Process list Table view */}
+        <div className="overflow-hidden border border-slate-800/60 rounded-xl">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-800/80 bg-slate-900/40 font-semibold text-slate-400">
+                <th className="px-6 py-3.5">PID</th>
+                <th className="px-6 py-3.5">Tên ứng dụng / Tiến trình</th>
+                <th className="px-6 py-3.5 text-center">Tiêu thụ RAM %</th>
+                <th className="px-6 py-3.5 text-center">Tiêu thụ CPU %</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/40">
+              {latest_snapshot.running_processes && latest_snapshot.running_processes.length > 0 ? (
+                latest_snapshot.running_processes.map((proc, idx) => (
+                  <tr key={idx} className="hover:bg-slate-900/10 text-slate-300">
+                    <td className="px-6 py-3 font-mono text-slate-500 font-bold">{proc.pid}</td>
+                    <td className="px-6 py-3 font-bold text-slate-200">{proc.name}</td>
+                    <td className="px-6 py-3 text-center font-semibold text-brand-400">{proc.memory_percent}%</td>
+                    <td className="px-6 py-3 text-center font-semibold text-emerald-400">{proc.cpu_percent}%</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center py-10 text-slate-500 font-semibold">
+                    Không có dữ liệu tiến trình đang hoạt động (Máy có thể đang Offline).
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
