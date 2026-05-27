@@ -54,14 +54,24 @@ echo.
 
 echo [+] Dang tao tac vu tu dong chay ngam cung Windows (Task Scheduler)...
 schtasks /delete /tn "NetDeviceAgent" /f >nul 2>&1
-schtasks /create /tn "NetDeviceAgent" /tr "pythonw.exe \"%~dp0agent.py\"" /sc onstart /ru SYSTEM /rl HIGHEST
+
+:: Tim duong dan tuyet doi cua pythonw.exe de bao dam SYSTEM account co the goi duoc
+set PYTHONW_PATH=pythonw.exe
+for /f "delims=" %%i in ('where pythonw.exe 2^>nul') do (
+    set PYTHONW_PATH=%%i
+)
+
+schtasks /create /tn "NetDeviceAgent" /tr "\"%PYTHONW_PATH%\" \"%~dp0agent.py\"" /sc onstart /ru SYSTEM /rl HIGHEST
 
 if %errorlevel% eq 0 (
+    echo [+] Dang kich hoat chay ngam Agent ngay lap tuc...
+    schtasks /run /tn "NetDeviceAgent" >nul 2>&1
     echo.
     echo =======================================================
     echo [SUCCESS] Da cai dat va khoi tao Agent hoan tat!
-    echo Tac vu da duoc dang ky chay ngam bang 'pythonw.exe' (SYSTEM)
-    echo moi khi may tinh khoi dong (khong hien cua so đen).
+    echo Tac vu da duoc dang ky tu dong chay ngam bang SYSTEM
+    echo moi khi may tinh khoi dong (an hoan toan, khong hien cua so).
+    echo Dac biet: Agent da duoc KICH HOAT CHAY NGAM NGAY LAP TUC!
     echo =======================================================
 ) else (
     echo [ERROR] Khong the dang ky Task Scheduler. Vui long thu lai bang quyen Admin.
