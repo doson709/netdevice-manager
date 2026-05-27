@@ -100,7 +100,7 @@ def run_powershell(cmd):
             encoding="utf-8",
             errors="ignore"
         )
-        stdout, stderr = process.communicate(timeout=15)
+        stdout, stderr = process.communicate(timeout=30)
         if process.returncode == 0:
             return stdout.strip()
     except Exception as e:
@@ -437,6 +437,8 @@ def collect_all_data(config):
 def send_report(config, payload):
     """Gửi dữ liệu báo cáo về FastAPI Server tập trung."""
     server_url = config.get("server_url", "http://localhost:8085")
+    if not server_url.startswith("http://") and not server_url.startswith("https://"):
+        server_url = "http://" + server_url
     report_endpoint = f"{server_url.rstrip('/')}/api/report"
     token = config.get("secret_token", "")
     

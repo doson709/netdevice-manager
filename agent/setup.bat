@@ -24,7 +24,7 @@ echo.
 echo =======================================================
 echo                 CAU HINH THONG TIN CLIENT
 echo =======================================================
-set /p SERVER_URL="1. Nhap URL Server (mac dinh: http://localhost:8085): "
+set /p SERVER_URL="1. Nhap URL Server (vi du: http://192.168.1.100:8085): "
 set /p TOKEN="2. Nhap Secret Token bao mat (mac dinh: secure-intranet-token-123): "
 set /p LOC="3. Nhap vi tri lap dat (vi du: Phong IT, Tang 2): "
 set /p DEP="4. Nhap ten phong ban (vi du: IT): "
@@ -33,6 +33,9 @@ set /p OWNER="5. Nhap ten nguoi su dung (vi du: Nguyen Van A): "
 :: Dat gia tri mac dinh neu bo qua
 if "%SERVER_URL%"=="" set SERVER_URL=http://localhost:8085
 if "%TOKEN%"=="" set TOKEN=secure-intranet-token-123
+
+:: Tu dong them http:// neu nguoi dung nhap thieu
+echo !SERVER_URL! | findstr /b /i "http://" >nul || echo !SERVER_URL! | findstr /b /i "https://" >nul || set SERVER_URL=http://!SERVER_URL!
 if "%LOC%"=="" set LOC=Phong IT, Tang 2
 if "%DEP%"=="" set DEP=IT
 if "%OWNER%"=="" set OWNER=Nguyen Van A
