@@ -47,8 +47,10 @@ netdevice-manager/
 │   ├── agent.py              # Script thu thập dữ liệu (PowerShell/winreg/UUID/API-Key)
 │   ├── config.json           # Cấu hình địa chỉ server, token và UUID trạm
 │   ├── requirements.txt      # Dependencies Python của Agent (psutil, requests)
-│   ├── install.bat           # File cài đặt tự động tạo Task Scheduler ngầm hệ thống
-│   ├── start_agent.bat       # Script khởi chạy thử nghiệm Agent dạng Console
+│   ├── setup.bat             # File cài đặt cấu hình & đăng ký chạy ngầm Task Scheduler
+│   ├── run.bat               # Script khởi chạy Console & kích hoạt Task chạy ngầm
+│   ├── stop.bat              # Script dừng cả tiến trình Console lẫn Task chạy ngầm
+│   ├── install.bat           # File cài đặt phụ trợ (được gọi bởi setup.bat)
 │   └── README.md             # Hướng dẫn chi tiết cài đặt Agent
 │
 ├── server/                   # Cấu phần Server Backend

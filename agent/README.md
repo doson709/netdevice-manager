@@ -7,26 +7,22 @@ Cấu phần Agent được cài đặt trên từng máy khách (client) Window
 2. Đã cài đặt **Python 3.8+** (Nhớ tick chọn **"Add Python to PATH"** trong quá trình cài đặt)
 3. Có kết nối mạng nội bộ thông suốt tới địa chỉ IP của máy chủ.
 
-## Cài đặt 1-Click (Khuyến nghị)
-1. Tải toàn bộ thư mục `agent/` về máy khách.
-2. Nhấp chuột phải vào tệp `install.bat` và chọn **"Run as Administrator"** (Chạy với quyền quản trị viên).
-3. Nhập các thông tin hệ thống khi được nhắc:
-   * **URL Server:** Địa chỉ IP và cổng của máy chủ API (ví dụ: `http://192.168.1.100:8080`).
-   * **Secret Token:** Mã khóa bảo mật kết nối nội bộ (phải khớp với mã cấu hình ở Server).
-   * **Vị trí / Phòng ban / Người phụ trách:** Metadata để quản lý trên dashboard.
-4. Trình cài đặt sẽ tự động:
-   * Cài đặt các thư viện bắt buộc từ `requirements.txt`.
-   * Cập nhật tệp cấu hình `config.json`.
-   * Đăng ký một tác vụ chạy nền vĩnh viễn trong **Task Scheduler** Windows (`NetDeviceAgent`) khởi động cùng Windows dưới quyền hệ thống `SYSTEM` ẩn hoàn toàn (không hiện màn hình đen).
+## Cài đặt & Vận hành nhanh bằng Script (.bat)
 
-## Khởi chạy thủ công (Kiểm thử)
-Nếu muốn chạy trực tiếp trên console để theo dõi log:
-1. Mở cửa sổ CMD trong thư mục `agent/`.
-2. Cài đặt các dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Chạy trực tiếp qua tệp `start_agent.bat` hoặc lệnh:
-   ```bash
-   python agent.py
-   ```
+Thư mục Agent đã được trang bị sẵn 3 kịch bản lệnh `.bat` vô cùng tiện lợi:
+
+### 1. Cài đặt hệ thống (`setup.bat`)
+*   Nhấp chuột phải vào tệp **setup.bat** -> Chọn **"Run as Administrator"** (Chạy với quyền Admin).
+*   Nhập các thông tin hệ thống khi được yêu cầu:
+    *   **URL Server:** Địa chỉ IP và cổng của máy chủ API (ví dụ: `http://192.168.1.100:8085`).
+    *   **Secret Token:** Mã khóa bảo mật kết nối nội bộ (phải khớp với mã cấu hình ở Server).
+    *   **Vị trí / Phòng ban / Người phụ trách:** Thông tin để hiển thị trên dashboard.
+*   Script sẽ tự động cài các thư viện bat buộc, đồng bộ `config.json` và đăng ký một tác vụ chạy ngầm vĩnh viễn trong **Task Scheduler** Windows (`NetDeviceAgent`) khởi động cùng hệ thống dưới quyền `SYSTEM` ẩn hoàn toàn (không hiện màn hình đen gây gián đoạn công việc).
+
+### 2. Khởi chạy giám sát (`run.bat`)
+*   Kích hoạt tệp **run.bat** bằng cách nhấp đúp chuột.
+*   Script sẽ đồng thời kích hoạt Task chạy ngầm trong Windows Task Scheduler và khởi chạy cửa sổ Console theo dõi logs trực tiếp gửi báo cáo dữ liệu trạm về Server.
+
+### 3. Dừng giám sát (`stop.bat`)
+*   Kích hoạt tệp **stop.bat** bằng cách nhấp đúp chuột.
+*   Script sẽ đóng sạch cửa sổ Console theo dõi và dừng hoàn toàn tác vụ chạy ngầm của Agent trong Task Scheduler.
