@@ -67,6 +67,8 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
 
   useEffect(() => {
     loadData();
+    const timer = setInterval(loadData, 5000); // Tự động làm mới dữ liệu và biểu đồ mỗi 5 giây
+    return () => clearInterval(timer);
   }, [deviceId]);
 
   useEffect(() => {
@@ -144,10 +146,16 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
               <div className="flex items-center gap-3">
                 <h2 className="text-3xl font-extrabold text-white tracking-tight">{device.client_name || device.hostname}</h2>
                 {device.is_online ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Online
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Online
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-brand-500/10 text-brand-400 border border-brand-500/15">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+                      Cập nhật trực tiếp (5s)
+                    </span>
+                  </div>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-slate-800/40 text-slate-500 border border-slate-700/30">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>

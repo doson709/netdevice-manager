@@ -25,8 +25,8 @@ export default function Dashboard({ onNavigateToDevice }) {
 
   useEffect(() => {
     loadData();
-    // Tự động làm mới mỗi 30 giây
-    const timer = setInterval(loadData, 30000);
+    // Tự động làm mới mỗi 5 giây
+    const timer = setInterval(loadData, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -57,12 +57,18 @@ export default function Dashboard({ onNavigateToDevice }) {
             Số liệu giám sát thời gian thực của toàn bộ máy trạm trong mạng nội bộ.
           </p>
         </div>
-        <button
-          onClick={loadData}
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 rounded-xl transition-all font-medium"
-        >
-          Làm mới
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold bg-brand-500/10 text-brand-400 border border-brand-500/15">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+            Tự động làm mới (5s)
+          </span>
+          <button
+            onClick={loadData}
+            className="flex items-center gap-2 px-4 py-2 text-sm bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 rounded-xl transition-all font-medium text-slate-300"
+          >
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {/* LAN ACCESS PANEL */}

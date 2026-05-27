@@ -41,6 +41,8 @@ export default function DeviceList({ onNavigateToDevice }) {
 
   useEffect(() => {
     loadDevices();
+    const timer = setInterval(loadDevices, 5000); // Tự động làm mới mỗi 5 giây
+    return () => clearInterval(timer);
   }, [page, search, status, department, location, sortBy, sortDir]);
 
   const handleSort = (field) => {
@@ -70,11 +72,17 @@ export default function DeviceList({ onNavigateToDevice }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* HEADER SECTION */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">Danh sách thiết bị</h2>
-        <p className="text-slate-400 text-sm mt-1">
-          Theo dõi cấu hình, trạng thái tải tài nguyên và thông số mạng của tất cả máy client.
-        </p>
+      <div className="flex justify-between items-start gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-white">Danh sách thiết bị</h2>
+          <p className="text-slate-400 text-sm mt-1">
+            Theo dõi cấu hình, trạng thái tải tài nguyên và thông số mạng của tất cả máy client.
+          </p>
+        </div>
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold bg-brand-500/10 text-brand-400 border border-brand-500/15 shrink-0 self-center">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+          Tự động làm mới (5s)
+        </span>
       </div>
 
       {/* FILTER & SEARCH PANEL */}
