@@ -8,9 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
-from .database import engine, Base, get_db, SessionLocal
-from .models import Device, HardwareSnapshot, DiskSnapshot, Software, NetworkSnapshot, ReportPayload
-from .routes import devices, dashboard, reports
+from database import engine, Base, get_db, SessionLocal
+from models import Device, HardwareSnapshot, DiskSnapshot, Software, NetworkSnapshot, ReportPayload
+from routes import devices, dashboard, reports
 
 # Khởi tạo bảng cơ sở dữ liệu nếu chưa tồn tại
 Base.metadata.create_all(bind=engine)
@@ -273,4 +273,4 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
     # Khởi chạy server tại cổng 8080
-    uvicorn.run("server.main:app", host="0.0.0.0", port=8080, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)

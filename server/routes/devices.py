@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_, and_
 
-from ..database import get_db
-from ..models import Device, HardwareSnapshot, Software, DiskSnapshot, NetworkSnapshot
+from database import get_db
+from models import Device, HardwareSnapshot, Software, DiskSnapshot, NetworkSnapshot
 
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
 

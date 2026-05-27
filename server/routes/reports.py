@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc, or_
 from typing import Optional, List
 
-from ..database import get_db
-from ..models import Device, Software
+from database import get_db
+from models import Device, Software
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
