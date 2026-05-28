@@ -10,15 +10,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   const [serverStats, setServerStats] = useState(null);
   
   // Quản lý vị trí kéo thả các nút
-  const [nodePositions, setNodePositions] = useState(() => {
-    try {
-      const saved = localStorage.getItem("netdevice_topology_positions");
-      return saved ? JSON.parse(saved) : {};
-    } catch (e) {
-      console.error("Lỗi đọc vị trí từ localStorage", e);
-      return {};
-    }
-  });
+  const [nodePositions, setNodePositions] = useState({});
   
   // Lưu trữ ID nút đang được kéo thả
   const [draggedNodeId, setDraggedNodeId] = useState(null);
@@ -32,18 +24,32 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   // Quản lý các vật dụng văn phòng tự đặt
-  const [customElements, setCustomElements] = useState(() => {
-    try {
-      const saved = localStorage.getItem("netdevice_topology_custom_elements");
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      console.error("Lỗi đọc vật dụng từ localStorage", e);
-      return [];
-    }
-  });
+  const [customElements, setCustomElements] = useState([]);
+
+  // Biến cờ đánh dấu đã tải thành công sơ đồ từ Server
+  const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
 
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggedHandle, setDraggedHandle] = useState(null); // { id: string, type: "start" | "end" }
+
+  // Tự động đồng bộ sơ đồ lên server sau 1 giây kể từ khi người dùng dừng di chuyển/chỉnh sửa
+  useEffect(() => {
+    if (!hasLoadedFromServer) return;
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        await api.saveTopology({
+          node_positions: nodePositions,
+          custom_elements: customElements
+        });
+        console.log("Đã tự động đồng bộ sơ đồ mạng lên Server!");
+      } catch (err) {
+        console.error("Lỗi tự động lưu sơ đồ mạng lên Server:", err);
+      }
+    }, 1000); // 1 giây debounce
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [nodePositions, customElements, hasLoadedFromServer]);
 
   const handleAddElement = (type) => {
     const newId = `custom-${type}-${Date.now()}`;
@@ -105,6 +111,56 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   const loadDevices = async () => {
     try {
       setLoading(true);
+      
+      // 1. Tải sơ đồ từ Server
+      let serverPositions = {};
+      let serverElements = [];
+      let loadSuccess = false;
+
+      try {
+        const topoRes = await api.getTopology();
+        if (topoRes) {
+          serverPositions = topoRes.node_positions || {};
+          serverElements = topoRes.custom_elements || [];
+          loadSuccess = true;
+        }
+      } catch (errTopo) {
+        console.error("Lỗi tải sơ đồ mạng từ Server:", errTopo);
+      }
+
+      // 2. Một lần đồng bộ ngược từ localStorage nếu Server trống rỗng
+      const hasServerData = Object.keys(serverPositions).length > 0 || (serverElements && serverElements.length > 0);
+      
+      if (loadSuccess && !hasServerData) {
+        try {
+          const savedPos = localStorage.getItem("netdevice_topology_positions");
+          const savedElements = localStorage.getItem("netdevice_topology_custom_elements");
+          
+          const localPos = savedPos ? JSON.parse(savedPos) : {};
+          const localElements = savedElements ? JSON.parse(savedElements) : [];
+          
+          if (Object.keys(localPos).length > 0 || localElements.length > 0) {
+            console.log("Đã tìm thấy sơ đồ cũ ở localStorage. Đang đồng bộ tự động lên Server...");
+            setNodePositions(localPos);
+            setCustomElements(localElements);
+          } else {
+            setNodePositions({});
+            setCustomElements([]);
+          }
+        } catch (e) {
+          console.error("Lỗi đọc/di cư dữ liệu từ localStorage", e);
+          setNodePositions({});
+          setCustomElements([]);
+        }
+      } else {
+        setNodePositions(serverPositions);
+        setCustomElements(serverElements || []);
+      }
+
+      // Đánh dấu đã tải thành công để kích hoạt autosave
+      setHasLoadedFromServer(true);
+
+      // 3. Tải danh sách thiết bị
       const res = await api.getDevices({ limit: 200 });
       setDevices(res.data || []);
       
@@ -1085,7 +1141,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
 
               <div className="pt-2 border-t border-slate-900 flex items-center gap-1.5 text-[9px] text-slate-500">
                 <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>Dữ liệu sơ đồ được lưu tại trình duyệt này</span>
+                <span>Dữ liệu sơ đồ tự động đồng bộ lên Server</span>
               </div>
             </div>
           )}
@@ -1951,7 +2007,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
               <span className="w-1.5 h-1.5 rounded-full bg-brand-500" /> Tự động lưu & Đồng bộ
             </h5>
             <p className="pl-3 text-slate-400 leading-relaxed">
-              Sơ đồ bố cục văn phòng của bạn được <strong>tự động lưu vĩnh viễn</strong> ở trình duyệt này. Nhấp "Đặt lại vị trí mặc định" trong sidebar để dọn dẹp và thiết lập lại sơ đồ đồng tâm.
+              Sơ đồ bố cục văn phòng của bạn được <strong>tự động lưu vĩnh viễn và đồng bộ</strong> trên Server máy chủ. Nhấp "Đặt lại vị trí mặc định" trong sidebar để dọn dẹp và thiết lập lại sơ đồ đồng tâm.
             </p>
           </div>
         </div>

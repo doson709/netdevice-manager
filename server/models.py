@@ -109,6 +109,15 @@ class NetworkSnapshot(Base):
     snapshot = relationship("HardwareSnapshot", back_populates="network_adapters")
 
 
+class TopologyLayout(Base):
+    __tablename__ = "topology_layouts"
+
+    layout_key = Column(String, primary_key=True, index=True, default="default")
+    node_positions = Column(String, default="{}")
+    custom_elements = Column(String, default="[]")
+    updated_at = Column(DateTime, default=vn_now, onupdate=vn_now)
+
+
 # =====================================================================
 #                        PYDANTIC SCHEMAS
 # =====================================================================

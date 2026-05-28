@@ -69,4 +69,8 @@ export const api = {
   },
 
   getTopSoftware: (limit = 15) => apiCall(`/api/reports/software/top?limit=${limit}`),
+
+  // Topology Sync
+  getTopology: () => apiCall("/api/topology"),
+  saveTopology: (payload) => apiCall("/api/topology", "POST", payload),
 };

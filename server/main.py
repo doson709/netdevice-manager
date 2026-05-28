@@ -9,8 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from database import engine, Base, get_db, SessionLocal
-from models import Device, HardwareSnapshot, DiskSnapshot, Software, NetworkSnapshot, ReportPayload
-from routes import devices, dashboard, reports
+from models import Device, HardwareSnapshot, DiskSnapshot, Software, NetworkSnapshot, ReportPayload, TopologyLayout
+from routes import devices, dashboard, reports, topology
 
 # Khởi tạo bảng cơ sở dữ liệu nếu chưa tồn tại
 Base.metadata.create_all(bind=engine)
@@ -69,6 +69,7 @@ SECRET_TOKEN = os.environ.get("NETDEVICE_SECRET_TOKEN", "secure-intranet-token-1
 app.include_router(devices.router)
 app.include_router(dashboard.router)
 app.include_router(reports.router)
+app.include_router(topology.router)
 
 # =====================================================================
 #                        API GỬI BÁO CÁO CỦA AGENT
