@@ -222,45 +222,6 @@ export default function NetworkTopology({ onNavigateToDevice }) {
     setDraggedNodeId(nodeId);
     isDraggingRef.current = false; // Reset trạng thái kéo trước khi di chuyển
     setHoveredNode(null); // Ẩn tooltip ngay lập tức khi bắt đầu kéo thả
-
-    // Ghim tâm vật thể vào đúng tâm con trỏ chuột ngay khi click xuống
-    if (canvasRef.current) {
-      const rect = canvasRef.current.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        const rawX = ((e.clientX - rect.left) / rect.width) * 800;
-        const rawY = ((e.clientY - rect.top) / rect.height) * 550;
-
-        // Căn lề dựa theo lưới ô vuông (grid mesh 25px)
-        const gridCellSize = 25;
-        const snappedX = Math.round(rawX / gridCellSize) * gridCellSize;
-        const snappedY = Math.round(rawY / gridCellSize) * gridCellSize;
-
-        const constrainedX = Math.max(50, Math.min(750, snappedX));
-        const constrainedY = Math.max(50, Math.min(500, snappedY));
-
-        if (nodeId.startsWith("custom-")) {
-          setCustomElements((prev) => {
-            const updated = prev.map((item) => {
-              if (item.id === nodeId) {
-                return { ...item, x: constrainedX, y: constrainedY };
-              }
-              return item;
-            });
-            localStorage.setItem("netdevice_topology_custom_elements", JSON.stringify(updated));
-            return updated;
-          });
-        } else {
-          setNodePositions((prev) => {
-            const updated = {
-              ...prev,
-              [nodeId]: { x: constrainedX, y: constrainedY }
-            };
-            localStorage.setItem("netdevice_topology_positions", JSON.stringify(updated));
-            return updated;
-          });
-        }
-      }
-    }
   };
 
   const handleMouseMove = (e) => {
@@ -326,12 +287,30 @@ export default function NetworkTopology({ onNavigateToDevice }) {
               }
 
               // Đổi độ lệch tâm từ hệ tọa độ cục bộ quay lại hệ tọa độ màn hình
-              const newX = el.x + (shiftX * Math.cos(theta) - shiftY * Math.sin(theta));
-              const newY = el.y + (shiftX * Math.sin(theta) + shiftY * Math.cos(theta));
+              let newX = el.x + (shiftX * Math.cos(theta) - shiftY * Math.sin(theta));
+              let newY = el.y + (shiftX * Math.sin(theta) + shiftY * Math.cos(theta));
+
+              // Snapping thông minh theo chẵn/lẻ của kích thước tường để các đầu luôn trùng giao điểm lưới
+              if (isWallH) {
+                if (newSize % 2 !== 0) {
+                  newX = Math.round((newX - 12.5) / 25) * 25 + 12.5;
+                } else {
+                  newX = Math.round(newX / 25) * 25;
+                }
+                newY = Math.round(newY / 25) * 25;
+              } else {
+                // wall-v
+                if (newSize % 2 !== 0) {
+                  newY = Math.round((newY - 12.5) / 25) * 25 + 12.5;
+                } else {
+                  newY = Math.round(newY / 25) * 25;
+                }
+                newX = Math.round(newX / 25) * 25;
+              }
 
               // Giới hạn trong khung bản vẽ kỹ thuật
-              const constrainedX = Math.max(25, Math.min(775, Math.round(newX / 25) * 25));
-              const constrainedY = Math.max(25, Math.min(525, Math.round(newY / 25) * 25));
+              const constrainedX = Math.max(25, Math.min(775, newX));
+              const constrainedY = Math.max(25, Math.min(525, newY));
 
               return {
                 ...el,
@@ -349,13 +328,35 @@ export default function NetworkTopology({ onNavigateToDevice }) {
       }
 
       // Kéo thả toàn bộ phần tử
-      const constrainedX = Math.max(50, Math.min(750, snappedX));
-      const constrainedY = Math.max(50, Math.min(500, snappedY));
-
       if (draggedNodeId.startsWith("custom-")) {
         setCustomElements((prev) => {
           const updated = prev.map((item) => {
             if (item.id === draggedNodeId) {
+              const isWallH = item.type === "wall-h";
+              const isWallV = item.type === "wall-v";
+              const size = item.size || 2;
+              const isOdd = size % 2 !== 0;
+
+              let finalX = snappedX;
+              let finalY = snappedY;
+
+              if (isWallH) {
+                if (isOdd) {
+                  finalX = Math.round((rawX - 12.5) / 25) * 25 + 12.5;
+                } else {
+                  finalX = snappedX;
+                }
+              } else if (isWallV) {
+                if (isOdd) {
+                  finalY = Math.round((rawY - 12.5) / 25) * 25 + 12.5;
+                } else {
+                  finalY = snappedY;
+                }
+              }
+
+              const constrainedX = Math.max(50, Math.min(750, finalX));
+              const constrainedY = Math.max(50, Math.min(500, finalY));
+
               return { ...item, x: constrainedX, y: constrainedY };
             }
             return item;
@@ -364,6 +365,8 @@ export default function NetworkTopology({ onNavigateToDevice }) {
           return updated;
         });
       } else {
+        const constrainedX = Math.max(50, Math.min(750, snappedX));
+        const constrainedY = Math.max(50, Math.min(500, snappedY));
         setNodePositions((prev) => {
           const updated = {
             ...prev,
@@ -448,7 +451,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
     const py = row * 25;
     
     for (const el of customElements) {
-      if (!["wall-h", "wall-v", "desk", "kitchen", "shelf"].includes(el.type)) {
+      if (!["wall-h", "wall-v", "desk", "kitchen", "shelf", "chair"].includes(el.type)) {
         continue;
       }
       
@@ -460,12 +463,17 @@ export default function NetworkTopology({ onNavigateToDevice }) {
       
       if (el.type === "wall-h") {
         const L = (el.size || 2) * 25;
-        if (Math.abs(lx) <= L / 2 + 4 && Math.abs(ly) <= 8) return true;
+        // Chiều dài thực L/2, cộng 25px đệm mỗi đầu. Độ dày thực 6px (từ -3 đến +3), cộng 25px đệm mỗi bên.
+        if (Math.abs(lx) <= L / 2 + 25 && Math.abs(ly) <= 28) return true;
       } else if (el.type === "wall-v") {
         const L = (el.size || 2) * 25;
-        if (Math.abs(lx) <= 8 && Math.abs(ly) <= L / 2 + 4) return true;
+        if (Math.abs(lx) <= 28 && Math.abs(ly) <= L / 2 + 25) return true;
       } else if (["desk", "kitchen", "shelf"].includes(el.type)) {
-        if (Math.abs(lx) <= 24 && Math.abs(ly) <= 14) return true;
+        // Kích thước thực 50x30 (nửa kích thước 25x15), cộng 25px đệm xung quanh.
+        if (Math.abs(lx) <= 49 && Math.abs(ly) <= 39) return true;
+      } else if (el.type === "chair") {
+        // Kích thước thực 20x20 (nửa kích thước 10x10), cộng 25px đệm xung quanh.
+        if (Math.abs(lx) <= 34 && Math.abs(ly) <= 34) return true;
       }
     }
     return false;
