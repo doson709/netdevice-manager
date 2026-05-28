@@ -29,6 +29,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const isDraggingRef = useRef(false);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   // Quản lý các vật dụng văn phòng tự đặt
   const [customElements, setCustomElements] = useState(() => {
@@ -222,6 +223,35 @@ export default function NetworkTopology({ onNavigateToDevice }) {
     setDraggedNodeId(nodeId);
     isDraggingRef.current = false; // Reset trạng thái kéo trước khi di chuyển
     setHoveredNode(null); // Ẩn tooltip ngay lập tức khi bắt đầu kéo thả
+
+    // Tính toán khoảng cách lệch (drag offset) từ con trỏ chuột đến tâm vật dụng
+    if (canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const mouseX = ((e.clientX - rect.left) / rect.width) * 800;
+        const mouseY = ((e.clientY - rect.top) / rect.height) * 550;
+        
+        let originalX = 400;
+        let originalY = 275;
+
+        if (nodeId.startsWith("custom-")) {
+          const el = customElements.find(item => item.id === nodeId);
+          if (el) {
+            originalX = el.x;
+            originalY = el.y;
+          }
+        } else {
+          const pos = nodePositions[nodeId] || { x: 400, y: 275 };
+          originalX = pos.x;
+          originalY = pos.y;
+        }
+
+        dragOffsetRef.current = {
+          x: mouseX - originalX,
+          y: mouseY - originalY
+        };
+      }
+    }
   };
 
   const handleMouseMove = (e) => {
@@ -237,17 +267,22 @@ export default function NetworkTopology({ onNavigateToDevice }) {
 
       // Căn lề dựa theo lưới ô vuông (grid mesh 25px)
       const gridCellSize = 25;
-      const snappedX = Math.round(rawX / gridCellSize) * gridCellSize;
-      const snappedY = Math.round(rawY / gridCellSize) * gridCellSize;
-
+      
       isDraggingRef.current = true; // Xác nhận đã di chuyển (kéo thả / thay đổi kích thước)
 
       if (draggedHandle) {
+        const snappedX = Math.round(rawX / gridCellSize) * gridCellSize;
+        const snappedY = Math.round(rawY / gridCellSize) * gridCellSize;
+
         // Xử lý thay đổi kích thước tường thông qua kéo thả 2 đầu
         setCustomElements((prev) => {
           const updated = prev.map((el) => {
             if (el.id === draggedHandle.id) {
               const isWallH = el.type === "wall-h";
+              const isWallV = el.type === "wall-v";
+              const isEffectiveH = (el.type === "wall-h" && (el.rotation === 0 || el.rotation === 180)) ||
+                                   (el.type === "wall-v" && (el.rotation === 90 || el.rotation === 270));
+              
               const oldLength = (el.size || 2) * 25;
               const theta = (el.rotation * Math.PI) / 180;
               const dx = snappedX - el.x;
@@ -272,8 +307,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                   newSize = Math.max(1, Math.round(newLength / 25));
                   shiftX = oldLength / 2 - (newSize * 25) / 2;
                 }
-              } else {
-                // wall-v
+              } else if (isWallV) {
                 if (draggedHandle.type === "end") {
                   const newLength = localY + oldLength / 2;
                   newSize = Math.max(1, Math.round(newLength / 25));
@@ -291,7 +325,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
               let newY = el.y + (shiftX * Math.sin(theta) + shiftY * Math.cos(theta));
 
               // Snapping thông minh theo chẵn/lẻ của kích thước tường để các đầu luôn trùng giao điểm lưới
-              if (isWallH) {
+              if (isEffectiveH) {
                 if (newSize % 2 !== 0) {
                   newX = Math.round((newX - 12.5) / 25) * 25 + 12.5;
                 } else {
@@ -299,7 +333,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                 }
                 newY = Math.round(newY / 25) * 25;
               } else {
-                // wall-v
+                // Effectively vertical
                 if (newSize % 2 !== 0) {
                   newY = Math.round((newY - 12.5) / 25) * 25 + 12.5;
                 } else {
@@ -327,31 +361,40 @@ export default function NetworkTopology({ onNavigateToDevice }) {
         return;
       }
 
-      // Kéo thả toàn bộ phần tử
+      // Kéo thả toàn bộ phần tử (sử dụng dragOffset để tránh ghim tâm chuột giật nhảy)
+      const targetX = rawX - dragOffsetRef.current.x;
+      const targetY = rawY - dragOffsetRef.current.y;
+      
+      const snappedX = Math.round(targetX / gridCellSize) * gridCellSize;
+      const snappedY = Math.round(targetY / gridCellSize) * gridCellSize;
+
       if (draggedNodeId.startsWith("custom-")) {
         setCustomElements((prev) => {
           const updated = prev.map((item) => {
             if (item.id === draggedNodeId) {
-              const isWallH = item.type === "wall-h";
-              const isWallV = item.type === "wall-v";
+              const isEffectiveH = (item.type === "wall-h" && (item.rotation === 0 || item.rotation === 180)) ||
+                                   (item.type === "wall-v" && (item.rotation === 90 || item.rotation === 270));
               const size = item.size || 2;
               const isOdd = size % 2 !== 0;
 
               let finalX = snappedX;
               let finalY = snappedY;
 
-              if (isWallH) {
+              if (isEffectiveH) {
                 if (isOdd) {
-                  finalX = Math.round((rawX - 12.5) / 25) * 25 + 12.5;
+                  finalX = Math.round((targetX - 12.5) / 25) * 25 + 12.5;
                 } else {
                   finalX = snappedX;
                 }
-              } else if (isWallV) {
+                finalY = snappedY;
+              } else if (item.type === "wall-v" || item.type === "wall-h") {
+                // Effectively vertical
                 if (isOdd) {
-                  finalY = Math.round((rawY - 12.5) / 25) * 25 + 12.5;
+                  finalY = Math.round((targetY - 12.5) / 25) * 25 + 12.5;
                 } else {
                   finalY = snappedY;
                 }
+                finalX = snappedX;
               }
 
               const constrainedX = Math.max(50, Math.min(750, finalX));
