@@ -439,9 +439,12 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   const cx = width / 2;
   const cy = height / 2;
 
+  // Sắp xếp danh sách thiết bị ổn định theo device_id để tránh nhảy vị trí ngẫu nhiên khi cập nhật
+  const sortedDevices = [...devices].sort((a, b) => a.device_id.localeCompare(b.device_id));
+
   // 1. Phân nhóm thiết bị theo bộ phận hoặc vị trí
   const groups = {};
-  devices.forEach((dev) => {
+  sortedDevices.forEach((dev) => {
     let key = groupBy === "department" ? dev.department : dev.location;
     key = key ? key.trim() : "";
     if (!key) {
@@ -480,8 +483,8 @@ export default function NetworkTopology({ onNavigateToDevice }) {
 
   if (groupBy === "location") {
     // Chế độ Vị trí: KHÔNG hiện các Folder vị trí (Hubs), chỉ hiện Server và các PC máy trạm nối trực tiếp
-    const totalDevices = devices.length;
-    devices.forEach((dev, idx) => {
+    const totalDevices = sortedDevices.length;
+    sortedDevices.forEach((dev, idx) => {
       // Phân bổ đều các PC thành một vòng tròn lớn quanh Server nếu chưa được kéo thả
       const angle = (idx * 2 * Math.PI) / (totalDevices || 1) - Math.PI / 2;
       const defaultDx = cx + rDev * Math.cos(angle);
@@ -608,10 +611,10 @@ export default function NetworkTopology({ onNavigateToDevice }) {
 
   // Số liệu thống kê ở Sidebar
   const stats = {
-    total: devices.length,
-    online: devices.filter(d => d.is_online).length,
-    offline: devices.filter(d => !d.is_online).length,
-    highLoad: devices.filter(d => d.is_online && (d.cpu_usage > 80 || d.ram_usage > 85)).length
+    total: sortedDevices.length,
+    online: sortedDevices.filter(d => d.is_online).length,
+    offline: sortedDevices.filter(d => !d.is_online).length,
+    highLoad: sortedDevices.filter(d => d.is_online && (d.cpu_usage > 80 || d.ram_usage > 85)).length
   };
 
   const selectedElement = customElements.find((item) => item.id === selectedElementId);
