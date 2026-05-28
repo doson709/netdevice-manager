@@ -442,6 +442,123 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   // Sắp xếp danh sách thiết bị ổn định theo device_id để tránh nhảy vị trí ngẫu nhiên khi cập nhật
   const sortedDevices = [...devices].sort((a, b) => a.device_id.localeCompare(b.device_id));
 
+  // Kiểm tra ô lưới có bị chặn bởi vật cản văn phòng không
+  const isCellBlocked = (col, row) => {
+    const px = col * 25;
+    const py = row * 25;
+    
+    for (const el of customElements) {
+      if (!["wall-h", "wall-v", "desk", "kitchen", "shelf"].includes(el.type)) {
+        continue;
+      }
+      
+      const rad = -(el.rotation * Math.PI) / 180;
+      const dx = px - el.x;
+      const dy = py - el.y;
+      const lx = dx * Math.cos(rad) - dy * Math.sin(rad);
+      const ly = dx * Math.sin(rad) + dy * Math.cos(rad);
+      
+      if (el.type === "wall-h") {
+        const L = (el.size || 2) * 25;
+        if (Math.abs(lx) <= L / 2 + 4 && Math.abs(ly) <= 8) return true;
+      } else if (el.type === "wall-v") {
+        const L = (el.size || 2) * 25;
+        if (Math.abs(lx) <= 8 && Math.abs(ly) <= L / 2 + 4) return true;
+      } else if (["desk", "kitchen", "shelf"].includes(el.type)) {
+        if (Math.abs(lx) <= 24 && Math.abs(ly) <= 14) return true;
+      }
+    }
+    return false;
+  };
+
+  // Thuật toán BFS tìm đường đi gấp khúc tối ưu và tự động tránh vật cản trên lưới 25px
+  const findOrthogonalPath = (x1, y1, x2, y2) => {
+    const startCol = Math.round(x1 / 25);
+    const startRow = Math.round(y1 / 25);
+    const endCol = Math.round(x2 / 25);
+    const endRow = Math.round(y2 / 25);
+    
+    if (startCol === endCol && startRow === endRow) {
+      return `M ${x1} ${y1} L ${x2} ${y2}`;
+    }
+    
+    const queue = [[startCol, startRow]];
+    const parent = {};
+    const visited = new Set();
+    visited.add(`${startCol},${startRow}`);
+    
+    let found = false;
+    
+    while (queue.length > 0) {
+      const [c, r] = queue.shift();
+      
+      if (c === endCol && r === endRow) {
+        found = true;
+        break;
+      }
+      
+      const dirs = [
+        [1, 0], [-1, 0], [0, 1], [0, -1]
+      ];
+      
+      for (const [dc, dr] of dirs) {
+        const nc = c + dc;
+        const nr = r + dr;
+        
+        if (nc >= 0 && nc <= 32 && nr >= 0 && nr <= 22) {
+          const key = `${nc},${nr}`;
+          if (!visited.has(key)) {
+            const isTarget = nc === endCol && nr === endRow;
+            const isSource = nc === startCol && nr === startRow;
+            
+            if (isTarget || isSource || !isCellBlocked(nc, nr)) {
+              visited.add(key);
+              parent[key] = [c, r];
+              queue.push([nc, nr]);
+            }
+          }
+        }
+      }
+    }
+    
+    if (found) {
+      const points = [];
+      let curr = [endCol, endRow];
+      while (curr) {
+        points.push(curr);
+        const key = `${curr[0]},${curr[1]}`;
+        curr = parent[key];
+      }
+      points.reverse();
+      
+      // Tối ưu hóa gộp các điểm cùng hàng/cột thẳng hàng
+      const optPoints = [];
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        if (i > 0 && i < points.length - 1) {
+          const prev = points[i - 1];
+          const next = points[i + 1];
+          const sameCol = prev[0] === p[0] && next[0] === p[0];
+          const sameRow = prev[1] === p[1] && next[1] === p[1];
+          if (sameCol || sameRow) {
+            continue;
+          }
+        }
+        optPoints.push(p);
+      }
+      
+      let d = `M ${x1} ${y1}`;
+      for (let i = 1; i < optPoints.length - 1; i++) {
+        d += ` L ${optPoints[i][0] * 25} ${optPoints[i][1] * 25}`;
+      }
+      d += ` L ${x2} ${y2}`;
+      return d;
+    }
+    
+    // Fallback: Gấp khúc đơn giản dạng L
+    return `M ${x1} ${y1} L ${x1} ${y2} L ${x2} ${y2}`;
+  };
+
   // 1. Phân nhóm thiết bị theo bộ phận hoặc vị trí
   const groups = {};
   sortedDevices.forEach((dev) => {
@@ -503,6 +620,9 @@ export default function NetworkTopology({ onNavigateToDevice }) {
       };
       renderedNodes.push(deviceNode);
 
+      // Tính toán đường đi gấp khúc và tự tránh vật cản văn phòng
+      const pathD = findOrthogonalPath(serverX, serverY, dx, dy);
+
       // Kéo dây nối trực tiếp từ Server chính tới PC máy trạm con
       connections.push({
         id: `conn-server-to-${devId}`,
@@ -510,6 +630,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
         y1: serverY,
         x2: dx,
         y2: dy,
+        d: pathD,
         type: dev.is_online ? "active-link" : "inactive-link",
         cpu_usage: dev.cpu_usage
       });
@@ -994,14 +1115,14 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                   pulseColor = highLoad ? "#f59e0b" : "#10b981";
                 }
 
+                const pathD = conn.d || `M ${conn.x1} ${conn.y1} L ${conn.x2} ${conn.y2}`;
+
                 return (
                   <g key={conn.id}>
                     {/* Cáp tĩnh nền */}
-                    <line
-                      x1={conn.x1}
-                      y1={conn.y1}
-                      x2={conn.x2}
-                      y2={conn.y2}
+                    <path
+                      d={pathD}
+                      fill="none"
                       className={`${strokeColor} transition-all duration-75`}
                       strokeWidth={isCore ? 2.5 : 1.8}
                       strokeDasharray={isCore ? "4,4" : isActive ? "none" : "2,2"}
@@ -1009,11 +1130,9 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                     
                     {/* Xung quang Laser chạy chuyển động dọc dây cáp khi máy trạm hoạt động */}
                     {(isActive || isCore) && (
-                      <line
-                        x1={conn.x1}
-                        y1={conn.y1}
-                        x2={conn.x2}
-                        y2={conn.y2}
+                      <path
+                        d={pathD}
+                        fill="none"
                         stroke={pulseColor}
                         strokeWidth={isCore ? 2 : 1.5}
                         className="flow-active-link transition-all duration-75 pointer-events-none"
