@@ -34,6 +34,7 @@ class Device(Base):
     first_seen = Column(DateTime, default=vn_now)
     last_seen = Column(DateTime, default=vn_now)
     is_online = Column(Boolean, default=True)
+    description = Column(String, default="")
 
     # Quan hệ
     hardware_snapshots = relationship("HardwareSnapshot", back_populates="device", cascade="all, delete-orphan")

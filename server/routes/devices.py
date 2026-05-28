@@ -338,6 +338,7 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
                 "location": "Phòng Máy Chủ",
                 "department": "IT System Management",
                 "owner": "Administrator System",
+                "description": "Máy chủ giám sát trung tâm NetDevice Server, chịu trách nhiệm thu thập tài nguyên hệ thống, quản lý sơ đồ văn phòng và kết nối cơ sở dữ liệu.",
                 "first_seen": vn_now(),
                 "last_seen": vn_now(),
                 "is_online": True
@@ -438,6 +439,7 @@ def get_device_detail(device_id: str, db: Session = Depends(get_db)):
             "location": device.location,
             "department": device.department,
             "owner": device.owner,
+            "description": device.description,
             "first_seen": device.first_seen,
             "last_seen": device.last_seen,
             "is_online": device.is_online
@@ -556,6 +558,8 @@ def update_device_metadata(
         device.department = payload["department"].strip()
     if "owner" in payload:
         device.owner = payload["owner"].strip()
+    if "description" in payload:
+        device.description = payload["description"].strip()
         
     db.commit()
     return {"message": "Cập nhật metadata thiết bị thành công"}

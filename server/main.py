@@ -27,6 +27,7 @@ def auto_migrate():
     migrations = [
         # (tên_bảng, tên_cột, kiểu_dữ_liệu, giá_trị_mặc_định)
         ("devices", "client_name", "TEXT", None),
+        ("devices", "description", "TEXT", ""),
     ]
 
     try:
@@ -125,15 +126,23 @@ def receive_agent_report(
             device.last_seen = now
             device.is_online = True
             
-            # Cập nhật metadata nếu agent gửi cấu hình mới
+            # Cập nhật metadata nếu agent gửi cấu hình mới và trên server chưa được tùy biến/đổi tên
             if payload.client_name:
-                device.client_name = payload.client_name
+                # Chỉ lấy tên từ client nếu server chưa đặt tên tùy biến (vẫn là trống, None hoặc trùng hostname)
+                if not device.client_name or device.client_name == device.hostname:
+                    device.client_name = payload.client_name
             if payload.location:
-                device.location = payload.location
+                # Chỉ lấy vị trí từ client nếu trên server chưa đặt vị trí (vẫn trống hoặc là mặc định "Chưa rõ")
+                if not device.location or device.location.strip() in ("", "Chưa rõ", "Chua ro"):
+                    device.location = payload.location
             if payload.department:
-                device.department = payload.department
+                # Chỉ lấy phòng ban từ client nếu trên server chưa đặt phòng ban (vẫn trống hoặc là mặc định "Chưa rõ")
+                if not device.department or device.department.strip() in ("", "Chưa rõ", "Chua ro"):
+                    device.department = payload.department
             if payload.owner:
-                device.owner = payload.owner
+                # Chỉ lấy người phụ trách từ client nếu trên server chưa đặt (vẫn trống hoặc là mặc định "Chưa rõ")
+                if not device.owner or device.owner.strip() in ("", "Chưa rõ", "Chua ro"):
+                    device.owner = payload.owner
                 
         db.flush() # Lấy ID/xác nhận thay đổi để ràng buộc khóa ngoại
         

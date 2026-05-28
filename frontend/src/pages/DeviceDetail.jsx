@@ -23,6 +23,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
   const [location, setLocation] = useState("");
   const [department, setDepartment] = useState("");
   const [owner, setOwner] = useState("");
+  const [description, setDescription] = useState("");
 
   const loadData = async (silent = false) => {
     try {
@@ -36,6 +37,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
         setLocation(res.device.location || "");
         setDepartment(res.device.department || "");
         setOwner(res.device.owner || "");
+        setDescription(res.device.description || "");
       }
       
       // Tải lịch sử vẽ biểu đồ tài nguyên
@@ -90,7 +92,8 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
         client_name: clientName,
         location,
         department,
-        owner
+        owner,
+        description
       });
       setIsEditing(false);
       
@@ -100,6 +103,7 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
       updated.device.location = location;
       updated.device.department = department;
       updated.device.owner = owner;
+      updated.device.description = description;
       setDetail(updated);
     } catch (err) {
       alert("Cập nhật thông tin thất bại!");
@@ -289,6 +293,31 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
             )}
           </div>
         </div>
+      </div>
+
+      {/* DEVICE DESCRIPTION PANEL */}
+      <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <Edit3 className="w-4 h-4 text-brand-400" /> Mô tả chức năng & Phần mềm chính
+        </h4>
+        <p className="text-[10px] text-slate-500 font-semibold uppercase">
+          Mô tả chức năng, công dụng đặc thù của máy trạm và các phần mềm chuyên môn/ứng dụng chính được thiết lập trên máy.
+        </p>
+        
+        {isEditing ? (
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full pl-4 pr-4 py-3 bg-slate-950/80 border border-slate-800 focus:border-brand-500 focus:outline-none rounded-xl text-xs text-slate-300 leading-relaxed resize-y min-h-[100px]"
+            placeholder="Ví dụ: Máy chuyên thiết kế đồ họa 3D Render của phòng kỹ thuật. Các phần mềm chính: Adobe Premiere, Photoshop, Blender, AutoCAD..."
+          />
+        ) : (
+          <div className="bg-slate-950/40 border border-slate-800/60 rounded-xl p-4 min-h-[80px] text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+            {device.description ? device.description : (
+              <span className="text-slate-500 italic">Chưa có mô tả chi tiết cho thiết bị này. Nhấp "Chỉnh sửa thông tin" ở trên để bổ sung mô tả công dụng máy và phần mềm chính.</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* CORE HARDWARE INFO & HISTORY CHART */}
