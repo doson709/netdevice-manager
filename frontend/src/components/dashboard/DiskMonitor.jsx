@@ -82,7 +82,7 @@ export default function DiskMonitor({ diskDistribution, onNavigateToDevice }) {
   };
 
   return (
-    <div ref={outerRef} className="glass-panel p-6 rounded-2xl space-y-6 shadow-2xl relative">
+    <div ref={outerRef} className={`glass-panel p-6 rounded-2xl space-y-6 shadow-2xl relative ${hoveredDevId ? "z-50" : "z-10"}`}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
