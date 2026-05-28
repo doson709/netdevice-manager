@@ -5,9 +5,26 @@ import DeviceList from "./pages/DeviceList";
 import SoftwareSearch from "./pages/SoftwareSearch";
 import DeviceDetail from "./pages/DeviceDetail";
 import NetworkTopology from "./pages/NetworkTopology";
+import Login from "./pages/Login";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return !!localStorage.getItem("netdevice_admin_token") || localStorage.getItem("netdevice_guest_mode") === "true";
+  });
+
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return !!localStorage.getItem("netdevice_admin_token");
+  });
+
   const [hash, setHash] = useState(window.location.hash || "#/dashboard");
+
+  const handleLogout = () => {
+    localStorage.removeItem("netdevice_admin_token");
+    localStorage.removeItem("netdevice_admin_user");
+    localStorage.removeItem("netdevice_guest_mode");
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+  };
 
   useEffect(() => {
     // Nếu URL trống hash, tự động gán #/dashboard mặc định
@@ -62,6 +79,7 @@ function App() {
         <DeviceDetail
           deviceId={selectedDeviceId}
           onBackToList={() => navigateTo("#/devices")}
+          isAdmin={isAdmin}
         />
       );
     }
@@ -70,15 +88,31 @@ function App() {
       case "dashboard":
         return <Dashboard onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} />;
       case "devices":
-        return <DeviceList onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} />;
+        return <DeviceList onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} isAdmin={isAdmin} />;
       case "software":
         return <SoftwareSearch onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} />;
       case "topology":
-        return <NetworkTopology onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} />;
+        return <NetworkTopology onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} isAdmin={isAdmin} />;
       default:
         return <Dashboard onNavigateToDevice={(id) => navigateTo(`#/device/${id}`)} />;
     }
   };
+
+  if (!isLoggedIn) {
+    return (
+      <Login
+        onLoginSuccess={() => {
+          setIsLoggedIn(true);
+          setIsAdmin(true);
+        }}
+        onGuestLogin={() => {
+          localStorage.setItem("netdevice_guest_mode", "true");
+          setIsLoggedIn(true);
+          setIsAdmin(false);
+        }}
+      />
+    );
+  }
 
   return (
     <Layout
@@ -86,6 +120,8 @@ function App() {
       setActiveTab={(newTab) => {
         navigateTo(`#/${newTab}`);
       }}
+      onLogout={handleLogout}
+      isAdmin={isAdmin}
     >
       {renderContent()}
     </Layout>

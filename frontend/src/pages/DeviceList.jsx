@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "../utils/api";
 import { Monitor, Search, Filter, ArrowUpDown, ChevronLeft, ChevronRight, User, MapPin, Building, Trash2 } from "lucide-react";
 
-export default function DeviceList({ onNavigateToDevice }) {
+export default function DeviceList({ onNavigateToDevice, isAdmin }) {
   const [data, setData] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -154,13 +154,13 @@ export default function DeviceList({ onNavigateToDevice }) {
                 <th className="px-6 py-4.5 cursor-pointer hover:text-slate-200" onClick={() => handleSort("last_seen")}>
                   <div className="flex items-center gap-1.5 justify-center">Báo cáo cuối <ArrowUpDown className="w-3.5 h-3.5" /></div>
                 </th>
-                <th className="px-6 py-4.5 text-center">Hành động</th>
+                {isAdmin && <th className="px-6 py-4.5 text-center">Hành động</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/50 text-xs">
               {loading ? (
                 <tr>
-                  <td colSpan="8" className="text-center py-20">
+                  <td colSpan={isAdmin ? 8 : 7} className="text-center py-20">
                     <div className="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                   </td>
                 </tr>
@@ -235,20 +235,22 @@ export default function DeviceList({ onNavigateToDevice }) {
                     </td>
 
                     {/* Hành động xóa */}
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={(e) => handleDelete(e, dev.device_id, dev.client_name || dev.hostname)}
-                        className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
-                        title="Xóa thiết bị khỏi hệ thống"
-                      >
-                        <Trash2 className="w-4.5 h-4.5" />
-                      </button>
-                    </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 text-center">
+                        <button
+                          onClick={(e) => handleDelete(e, dev.device_id, dev.client_name || dev.hostname)}
+                          className="p-2 text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-all"
+                          title="Xóa thiết bị khỏi hệ thống"
+                        >
+                          <Trash2 className="w-4.5 h-4.5" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center py-20 text-slate-500 font-medium">
+                  <td colSpan={isAdmin ? 8 : 7} className="text-center py-20 text-slate-500 font-medium">
                     Không tìm thấy thiết bị trạm nào thỏa mãn bộ lọc.
                   </td>
                 </tr>

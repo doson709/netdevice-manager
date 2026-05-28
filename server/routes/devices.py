@@ -15,6 +15,7 @@ except ImportError:
 
 from database import get_db
 from models import Device, HardwareSnapshot, Software, DiskSnapshot, NetworkSnapshot, vn_now
+from auth import verify_admin_token
 
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
 
@@ -540,7 +541,8 @@ def get_device_software(
 def update_device_metadata(
     device_id: str, 
     payload: dict, # location, department, owner
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_admin_token)
 ):
     """Cập nhật thông tin vị trí, phòng ban, người sở hữu từ Dashboard quản lý."""
     if device_id == "server-core":
@@ -565,7 +567,11 @@ def update_device_metadata(
     return {"message": "Cập nhật metadata thiết bị thành công"}
 
 @router.delete("/{device_id}")
-def delete_device(device_id: str, db: Session = Depends(get_db)):
+def delete_device(
+    device_id: str, 
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_admin_token)
+):
     """Xóa thiết bị khỏi hệ thống (bao gồm các quan hệ cascading)."""
     if device_id == "server-core":
         raise HTTPException(status_code=400, detail="Không thể xóa máy chủ giám sát trung tâm")

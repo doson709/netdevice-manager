@@ -3,7 +3,7 @@ import { api } from "../utils/api";
 import { ArrowLeft, Monitor, User, MapPin, Building, Activity, HardDrive, Cpu, ShieldAlert, Award, Globe, Edit3, Check, X, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 
-export default function DeviceDetail({ deviceId, onBackToList }) {
+export default function DeviceDetail({ deviceId, onBackToList, isAdmin }) {
   const [detail, setDetail] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -184,31 +184,33 @@ export default function DeviceDetail({ deviceId, onBackToList }) {
         </div>
 
         {/* Action Button: Edit / Delete */}
-        <div className="flex gap-3">
-          {isEditing ? (
-            <div className="flex gap-2">
+        {isAdmin && (
+          <div className="flex gap-3">
+            {isEditing ? (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleUpdateMetadata}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/10 transition-all"
+                >
+                  <Check className="w-4 h-4" /> Lưu
+                </button>
+                <button
+                  onClick={() => { setIsEditing(false); loadData(); }}
+                  className="flex items-center gap-1.5 px-4 py-2 text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 rounded-xl font-semibold transition-all"
+                >
+                  <X className="w-4 h-4" /> Hủy
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={handleUpdateMetadata}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold shadow-lg shadow-emerald-600/10 transition-all"
+                onClick={() => setIsEditing(true)}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 rounded-xl transition-all font-semibold text-slate-300"
               >
-                <Check className="w-4 h-4" /> Lưu
+                <Edit3 className="w-4 h-4" /> Chỉnh sửa thông tin
               </button>
-              <button
-                onClick={() => { setIsEditing(false); loadData(); }}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 rounded-xl font-semibold transition-all"
-              >
-                <X className="w-4 h-4" /> Hủy
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 text-xs bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/80 rounded-xl transition-all font-semibold text-slate-300"
-            >
-              <Edit3 className="w-4 h-4" /> Chỉnh sửa thông tin
-            </button>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* METADATA INFO PANEL */}

@@ -1,7 +1,7 @@
 import React from "react";
-import { LayoutDashboard, Monitor, Search, RefreshCw, Cpu, Server, Wifi, ShieldCheck, Network } from "lucide-react";
+import { LayoutDashboard, Monitor, Search, RefreshCw, Cpu, Server, Wifi, ShieldCheck, Network, LogOut } from "lucide-react";
 
-export default function Layout({ children, activeTab, setActiveTab }) {
+export default function Layout({ children, activeTab, setActiveTab, onLogout, isAdmin }) {
   const menuItems = [
     { id: "dashboard", label: "Tổng quan", icon: LayoutDashboard },
     { id: "devices", label: "Thiết bị mạng", icon: Monitor },
@@ -50,6 +50,16 @@ export default function Layout({ children, activeTab, setActiveTab }) {
               </button>
             );
           })}
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm text-rose-400 hover:text-rose-350 hover:bg-rose-500/10 border border-transparent transition-all mt-6 cursor-pointer group"
+            >
+              <LogOut className="w-5 h-5 text-rose-400 transition-transform group-hover:translate-x-0.5" />
+              Đăng xuất
+            </button>
+          )}
         </nav>
 
         {/* Footer info */}
@@ -71,6 +81,19 @@ export default function Layout({ children, activeTab, setActiveTab }) {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Role indicator badge */}
+            {isAdmin ? (
+              <span className="px-3.5 py-1.5 text-[10px] font-extrabold bg-brand-500/10 border border-brand-500/25 text-brand-400 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-brand-500/5 animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-400 glow-brand"></span>
+                Quản trị viên
+              </span>
+            ) : (
+              <span className="px-3.5 py-1.5 text-[10px] font-extrabold bg-blue-500/10 border border-blue-500/25 text-blue-400 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-blue-500/5">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                Khách (Chỉ xem)
+              </span>
+            )}
+
             {/* Status indicator */}
             <div className="flex items-center gap-2 text-xs bg-slate-950 border border-slate-800/80 px-3 py-1.5 rounded-full">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>

@@ -5,6 +5,7 @@ import json
 from database import get_db
 from models import TopologyLayout
 from pydantic import BaseModel
+from auth import verify_admin_token
 
 router = APIRouter(prefix="/api/topology", tags=["Topology"])
 
@@ -38,7 +39,11 @@ def get_topology(db: Session = Depends(get_db)):
     }
 
 @router.post("")
-def save_topology(payload: TopologySaveSchema, db: Session = Depends(get_db)):
+def save_topology(
+    payload: TopologySaveSchema, 
+    db: Session = Depends(get_db),
+    current_user: str = Depends(verify_admin_token)
+):
     """Lưu trữ/Đồng bộ sơ đồ mạng và các vật dụng từ Client lên Server."""
     layout = db.query(TopologyLayout).filter(TopologyLayout.layout_key == "default").first()
     

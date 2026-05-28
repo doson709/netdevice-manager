@@ -12,6 +12,11 @@ async function apiCall(endpoint, method = "GET", body = null) {
     },
   };
 
+  const token = localStorage.getItem("netdevice_admin_token");
+  if (token) {
+    options.headers["Authorization"] = `Bearer ${token}`;
+  }
+
   if (body) {
     options.body = JSON.stringify(body);
   }
@@ -73,4 +78,7 @@ export const api = {
   // Topology Sync
   getTopology: () => apiCall("/api/topology"),
   saveTopology: (payload) => apiCall("/api/topology", "POST", payload),
+
+  // Authentication
+  login: (username, password) => apiCall("/api/auth/login", "POST", { username, password }),
 };

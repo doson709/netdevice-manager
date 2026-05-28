@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { api } from "../utils/api";
 import { Network, Server, Folder, Monitor, Cpu, Info, Loader2, ArrowRight, Layers, HelpCircle, RotateCcw, Move } from "lucide-react";
 
-export default function NetworkTopology({ onNavigateToDevice }) {
+export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,7 +34,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
 
   // Tự động đồng bộ sơ đồ lên server sau 1 giây kể từ khi người dùng dừng di chuyển/chỉnh sửa
   useEffect(() => {
-    if (!hasLoadedFromServer) return;
+    if (!hasLoadedFromServer || !isAdmin) return;
 
     const delayDebounceFn = setTimeout(async () => {
       try {
@@ -49,7 +49,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
     }, 1000); // 1 giây debounce
 
     return () => clearTimeout(delayDebounceFn);
-  }, [nodePositions, customElements, hasLoadedFromServer]);
+  }, [nodePositions, customElements, hasLoadedFromServer, isAdmin]);
 
   const handleAddElement = (type) => {
     const newId = `custom-${type}-${Date.now()}`;
@@ -205,6 +205,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   // Lắng nghe sự kiện bàn phím để di chuyển vật thể/thiết bị bằng phím mũi tên
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (!isAdmin) return; // Chặn phím tắt di chuyển với tài khoản khách
       if (groupBy !== "location" || !selectedElementId) return;
 
       const keys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
@@ -273,6 +274,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
   }, [selectedElementId, groupBy]);
 
   const handleMouseDown = (e, nodeId) => {
+    if (!isAdmin) return; // Không cho phép tài khoản khách kéo thả các nút/vật thể
     if (groupBy !== "location") return; // KHÔNG kéo thả ở chế độ phòng ban
     if (e.button !== 0) return; // Chỉ kéo thả bằng chuột trái
     e.preventDefault();
@@ -891,7 +893,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
         {/* Sidebar statistics & Settings (1/4 width) on the left */}
         <div className="space-y-6 xl:col-span-1">
           {/* 1. THƯ VIỆN VẬT DỤNG VĂN PHÒNG */}
-          {groupBy === "location" && (
+          {isAdmin && groupBy === "location" && (
             <div className="glass-panel p-6 rounded-3xl space-y-4 shadow-xl border border-brand-500/10 bg-slate-900/10">
               <h4 className="text-sm font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2">
                 <Layers className="w-4 h-4" /> Thư viện Vật dụng
@@ -976,7 +978,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
           )}
 
           {/* 2. HIỆU CHỈNH VẬT DỤNG ĐÃ CHỌN */}
-          {groupBy === "location" && selectedElement && (
+          {isAdmin && groupBy === "location" && selectedElement && (
             <div className="glass-panel p-6 rounded-3xl space-y-4 shadow-xl border border-cyan-500/20 bg-cyan-950/10">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">
@@ -1121,7 +1123,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
           </div>
 
           {/* 4. THIẾT LẬP SƠ ĐỒ (RESET CONTROL) */}
-          {groupBy === "location" && (
+          {isAdmin && groupBy === "location" && (
             <div className="glass-panel p-6 rounded-3xl space-y-4 shadow-xl border border-brand-500/10">
               <h4 className="text-sm font-bold uppercase tracking-wider text-brand-400 flex items-center gap-2">
                 <Layers className="w-4 h-4" /> Thiết lập Sơ đồ
@@ -1745,7 +1747,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                       {elementGraphic}
                       
                       {/* DRAG RESIZE HANDLES FOR WALLS (Only render if selected and not dragging) */}
-                      {isWall && isSelected && !draggedNodeId && !draggedHandle && (
+                      {isAdmin && isWall && isSelected && !draggedNodeId && !draggedHandle && (
                         <>
                           {/* Start Handle */}
                           <circle
@@ -1779,7 +1781,7 @@ export default function NetworkTopology({ onNavigateToDevice }) {
                       )}
                       
                       {/* CONTROL BUTTONS FOR SELECTED ELEMENT (Only render if selected and not dragging) */}
-                      {isSelected && !draggedNodeId && !draggedHandle && (
+                      {isAdmin && isSelected && !draggedNodeId && !draggedHandle && (
                         <g transform={`rotate(${-el.rotation})`} className="pointer-events-auto">
                           {/* DELETE BUTTON (Left top) */}
                           <g

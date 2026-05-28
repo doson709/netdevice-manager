@@ -72,6 +72,32 @@ app.include_router(dashboard.router)
 app.include_router(reports.router)
 app.include_router(topology.router)
 
+from pydantic import BaseModel
+from auth import ADMIN_USERNAME, ADMIN_PASSWORD, ADMIN_TOKEN
+
+class LoginPayload(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/auth/login")
+def login_admin(payload: LoginPayload):
+    """Xác thực tài khoản admin và cấp Token phiên làm việc."""
+    if payload.username == ADMIN_USERNAME and payload.password == ADMIN_PASSWORD:
+        return {
+            "status": "success",
+            "token": ADMIN_TOKEN,
+            "user": {
+                "username": ADMIN_USERNAME,
+                "role": "Administrator"
+            }
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Tài khoản hoặc mật khẩu không chính xác!"
+        )
+
+
 # =====================================================================
 #                        API GỬI BÁO CÁO CỦA AGENT
 # =====================================================================
