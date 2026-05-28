@@ -25,7 +25,9 @@ export default function DiskMonitor({ diskDistribution, onNavigateToDevice }) {
     }
     deviceMap[devId].disks.push(dk);
   });
-  const deviceList = Object.values(deviceMap);
+  const deviceList = Object.values(deviceMap).sort((a, b) => 
+    a.client_name.localeCompare(b.client_name, "vi", { sensitivity: "base" })
+  );
 
   const filteredDevices = deviceList.filter(
     (dev) =>
