@@ -25,7 +25,23 @@ async function apiCall(endpoint, method = "GET", body = null) {
     const response = await fetch(url, options);
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(errText || `API Error: ${response.status}`);
+      let errMsg = `API Error: ${response.status}`;
+      try {
+        const parsed = JSON.parse(errText);
+        if (parsed && typeof parsed.detail === "string") {
+          errMsg = parsed.detail;
+        } else if (parsed && typeof parsed.detail === "object" && parsed.detail !== null) {
+          // Xử lý FastAPI validation errors dạng danh sách các lỗi
+          errMsg = JSON.stringify(parsed.detail);
+        } else if (parsed && parsed.message) {
+          errMsg = parsed.message;
+        }
+      } catch (e) {
+        if (errText) {
+          errMsg = errText;
+        }
+      }
+      throw new Error(errMsg);
     }
     return await response.json();
   } catch (error) {
