@@ -83,23 +83,23 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
     <div className="space-y-8 animate-fade-in">
       {/* HEADER SECTION */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight text-white">Tra cứu phần mềm</h2>
+        <h2 className="text-3xl font-bold tracking-tight text-white">Tra cứu phần mềm & Tiến trình</h2>
         <p className="text-slate-400 text-sm mt-1">
-          Tìm kiếm diện rộng xem các phần mềm cụ thể đã được cài đặt trên những máy trạm nào.
+          Tìm kiếm diện rộng xem các phần mềm cài đặt hoặc tiến trình đang chạy cụ thể trên những máy trạm nào.
         </p>
       </div>
 
       {/* SEARCH INTERFACE PANEL */}
       <div className="glass-panel p-6 rounded-2xl space-y-4">
         <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400">
-          Tìm kiếm phần mềm toàn mạng
+          Tìm kiếm phần mềm & Tiến trình toàn mạng
         </h4>
         <div className="flex gap-4">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
             <input
               type="text"
-              placeholder="Nhập tên phần mềm muốn quét (ví dụ: Google Chrome, UltraViewer, Skype...)"
+              placeholder="Nhập tên phần mềm hoặc tiến trình đang chạy muốn quét (ví dụ: Chrome, UltraViewer, python.exe...)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") triggerSearch(); }}
@@ -122,7 +122,7 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
           <div>
             <div className="p-6 border-b border-slate-800/80 flex items-center justify-between">
               <h4 className="text-sm font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <ListFilter className="w-4 h-4 text-brand-400" /> Kết quả truy vấn ({total} máy trạm)
+                <ListFilter className="w-4 h-4 text-brand-400" /> Kết quả truy vấn ({total} đối tượng)
               </h4>
             </div>
 
@@ -131,10 +131,10 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                 <thead>
                   <tr className="border-b border-slate-800/80 bg-slate-900/30 text-slate-400 font-semibold uppercase tracking-wider">
                     <th className="px-6 py-3.5">Tên Client hiển thị</th>
-                    <th className="px-6 py-3.5">Phần mềm phát hiện</th>
+                    <th className="px-6 py-3.5">Đối tượng phát hiện</th>
                     <th className="px-6 py-3.5">Người sử dụng</th>
                     <th className="px-6 py-3.5">Bộ phận</th>
-                    <th className="px-6 py-3.5">Phiên bản đã cài</th>
+                    <th className="px-6 py-3.5">Chi tiết / Phiên bản</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/40">
@@ -160,9 +160,25 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                           ) : null}
                         </td>
                         
-                        {/* Phần mềm phát hiện */}
-                        <td className="px-6 py-3.5 text-brand-400 font-bold max-w-[180px] truncate" title={r.software_name}>
-                          {r.software_name}
+                        {/* Đối tượng phát hiện */}
+                        <td className="px-6 py-3.5 max-w-[220px] truncate">
+                          <div className="flex items-center gap-2">
+                            {r.search_type === "process" ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/15 shrink-0">
+                                Tiến trình
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-brand-500/10 text-brand-400 border border-brand-500/15 shrink-0">
+                                Phần mềm
+                              </span>
+                            )}
+                            <span className="font-bold text-slate-200" title={r.display_name}>
+                              {r.display_name}
+                            </span>
+                          </div>
+                          {r.search_type === "process" && (
+                            <p className="text-[10px] text-slate-500 mt-0.5 truncate">{r.publisher}</p>
+                          )}
                         </td>
                         
                         {/* Người dùng */}
@@ -175,14 +191,20 @@ export default function SoftwareSearch({ onNavigateToDevice }) {
                         </td>
                         
                         {/* Phiên bản */}
-                        <td className="px-6 py-3.5 font-mono text-slate-400 font-bold">{r.version || "Unknown"}</td>
+                        <td className="px-6 py-3.5 font-mono font-bold">
+                          {r.search_type === "process" ? (
+                            <span className="text-amber-400/80">{r.version}</span>
+                          ) : (
+                            <span className="text-slate-400">{r.version}</span>
+                          )}
+                        </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan="5" className="text-center py-20 text-slate-500 font-semibold">
                         {query.trim()
-                          ? "Không tìm thấy máy trạm nào đã cài đặt phần mềm này."
+                          ? "Không tìm thấy máy trạm nào đã cài đặt phần mềm hoặc đang chạy tiến trình này."
                           : "Nhập từ khóa và bấm Tìm kiếm để bắt đầu tra cứu."}
                       </td>
                     </tr>

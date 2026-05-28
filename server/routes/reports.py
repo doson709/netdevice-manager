@@ -1,10 +1,11 @@
+import json
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, or_
+from sqlalchemy import func, desc, or_, and_
 from typing import Optional, List
 
 from database import get_db
-from models import Device, Software
+from models import Device, Software, HardwareSnapshot
 
 router = APIRouter(prefix="/api/reports", tags=["Reports"])
 
@@ -15,37 +16,89 @@ def search_global_software(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1)
 ):
-    """Tìm kiếm một phần mềm cụ thể xem những máy tính nào đã cài đặt."""
-    q = db.query(Software, Device).join(Device, Software.device_id == Device.device_id).filter(
+    """Tìm kiếm một phần mềm đã cài đặt HOẶC tiến trình đang chạy xem có trên những máy tính nào."""
+    combined_results = []
+    
+    # 1. Tìm kiếm trong các phần mềm đã cài đặt (Registry Software)
+    sw_q = db.query(Software, Device).join(Device, Software.device_id == Device.device_id).filter(
         or_(
             Software.name.ilike(f"%{query}%"),
             Software.publisher.ilike(f"%{query}%")
         )
-    )
+    ).all()
     
-    total = q.count()
-    records = q.order_by(Software.name).offset((page - 1) * limit).limit(limit).all()
-    
-    data = []
-    for sw, dev in records:
-        data.append({
+    for sw, dev in sw_q:
+        combined_results.append({
             "device_id": dev.device_id,
             "hostname": dev.hostname,
             "client_name": dev.client_name,
             "owner": dev.owner,
             "department": dev.department,
             "is_online": dev.is_online,
-            "software_name": sw.name,
-            "version": sw.version,
-            "publisher": sw.publisher,
+            "search_type": "software",
+            "display_name": sw.name,
+            "version": sw.version or "Unknown",
+            "publisher": sw.publisher or "Unknown",
             "discovered_at": sw.discovered_at
         })
         
+    # 2. Tìm kiếm trong các tiến trình đang hoạt động (Parsed JSON in HardwareSnapshots)
+    try:
+        subquery = db.query(
+            HardwareSnapshot.device_id,
+            func.max(HardwareSnapshot.timestamp).label("max_ts")
+        ).group_by(HardwareSnapshot.device_id).subquery()
+        
+        latest_snapshots = db.query(HardwareSnapshot).join(
+            subquery,
+            and_(
+                HardwareSnapshot.device_id == subquery.c.device_id,
+                HardwareSnapshot.timestamp == subquery.c.max_ts
+            )
+        ).all()
+        
+        for snap in latest_snapshots:
+            if not snap.running_processes:
+                continue
+            try:
+                proc_list = json.loads(snap.running_processes)
+            except Exception:
+                continue
+                
+            for p in proc_list:
+                p_name = p.get("name", "")
+                if query.lower() in p_name.lower():
+                    dev = db.query(Device).filter(Device.device_id == snap.device_id).first()
+                    if dev:
+                        combined_results.append({
+                            "device_id": dev.device_id,
+                            "hostname": dev.hostname,
+                            "client_name": dev.client_name,
+                            "owner": dev.owner,
+                            "department": dev.department,
+                            "is_online": dev.is_online,
+                            "search_type": "process",
+                            "display_name": p_name,
+                            "version": f"PID: {p.get('pid', 0)} (Đang chạy)",
+                            "publisher": f"Tải CPU: {p.get('cpu_percent', 0.0)}% | RAM: {p.get('memory_percent', 0.0)}%",
+                            "discovered_at": snap.timestamp
+                        })
+    except Exception as e:
+        print(f"[SEARCH ERROR] Loi tim kiem tien trinh: {e}")
+        
+    # Sắp xếp kết quả: phần mềm lên đầu, tiến trình ở dưới, hoặc theo bảng chữ cái của tên đối tượng phát hiện
+    combined_results.sort(key=lambda x: (x["search_type"], x["display_name"].lower()))
+    
+    total = len(combined_results)
+    
+    # Thực hiện phân trang trong bộ nhớ
+    paginated_data = combined_results[(page - 1) * limit : page * limit]
+    
     return {
         "total": total,
         "page": page,
         "limit": limit,
-        "data": data
+        "data": paginated_data
     }
 
 @router.get("/software/top")
