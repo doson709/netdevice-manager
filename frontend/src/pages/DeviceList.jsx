@@ -12,8 +12,8 @@ export default function DeviceList({ onNavigateToDevice }) {
   const [status, setStatus] = useState("");
   const [department, setDepartment] = useState("");
   const [location, setLocation] = useState("");
-  const [sortBy, setSortBy] = useState("last_seen");
-  const [sortDir, setSortDir] = useState("desc");
+  const [sortBy, setSortBy] = useState("client_name");
+  const [sortDir, setSortDir] = useState("asc");
   const [page, setPage] = useState(1);
   const limit = 15;
 
