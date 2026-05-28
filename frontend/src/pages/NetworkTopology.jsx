@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { api } from "../utils/api";
-import { Network, Server, Folder, Monitor, Cpu, Info, Loader2, ArrowRight, Layers, HelpCircle, RotateCcw, Move } from "lucide-react";
+import { Network, Server, Folder, Monitor, Cpu, Info, Loader2, ArrowRight, Layers, HelpCircle, RotateCcw, Move, Maximize2, Minimize2, Focus } from "lucide-react";
 
 export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
   const [devices, setDevices] = useState([]);
@@ -31,6 +31,71 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
 
   const [selectedElementId, setSelectedElementId] = useState(null);
   const [draggedHandle, setDraggedHandle] = useState(null); // { id: string, type: "start" | "end" }
+
+  // Hỗ trợ Zoom & Pan bản đồ
+  const [zoomScale, setZoomScale] = useState(1.0);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+  const [scrollZoomDirection, setScrollZoomDirection] = useState(null); // "in" | "out" | null
+  const panStartRef = useRef({ x: 0, y: 0 });
+  const scrollZoomTimeoutRef = useRef(null);
+
+  // Lắng nghe phím Spacebar để kích hoạt chế độ di chuyển bản đồ (Pan)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable)) {
+        return;
+      }
+      if (e.code === "Space") {
+        e.preventDefault(); // Ngăn chặn cuộn trang trong mọi sự kiện lặp lại (auto-repeat) khi giữ phím
+        if (!isSpacePressed) {
+          setIsSpacePressed(true);
+        }
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.code === "Space") {
+        setIsSpacePressed(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [isSpacePressed]);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Lắng nghe sự kiện toàn màn hình của trình duyệt để cập nhật React state tương ứng
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (!canvasRef.current) return;
+    try {
+      if (!document.fullscreenElement) {
+        await canvasRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error("Lỗi khi chuyển đổi chế độ Toàn màn hình:", err);
+    }
+  };
 
   // Tự động đồng bộ sơ đồ lên server sau 1 giây kể từ khi người dùng dừng di chuyển/chỉnh sửa
   useEffect(() => {
@@ -202,6 +267,45 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
     return () => clearInterval(timer);
   }, []);
 
+  // Lắng nghe sự kiện wheel với passive: false để hỗ trợ Space + Scroll phóng to/thu nhỏ
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (e) => {
+      if (isSpacePressed) {
+        e.preventDefault(); // Ngăn chặn trình duyệt cuộn trang
+        
+        const zoomSpeed = 0.05;
+        const delta = -e.deltaY;
+        
+        // Đặt hướng zoom để hiển thị con trỏ tương ứng
+        setScrollZoomDirection(delta > 0 ? "in" : "out");
+        
+        if (scrollZoomTimeoutRef.current) {
+          clearTimeout(scrollZoomTimeoutRef.current);
+        }
+        scrollZoomTimeoutRef.current = setTimeout(() => {
+          setScrollZoomDirection(null);
+        }, 250);
+
+        setZoomScale((prev) => {
+          let newScale = prev + (delta > 0 ? zoomSpeed : -zoomSpeed);
+          newScale = Math.max(0.5, Math.min(3.0, newScale));
+          return newScale;
+        });
+      }
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener("wheel", handleWheel);
+      if (scrollZoomTimeoutRef.current) {
+        clearTimeout(scrollZoomTimeoutRef.current);
+      }
+    };
+  }, [isSpacePressed]);
+
   // Lắng nghe sự kiện bàn phím để di chuyển vật thể/thiết bị bằng phím mũi tên
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -273,8 +377,24 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedElementId, groupBy]);
 
+  const handleContainerMouseDown = (e) => {
+    // Chỉ cho phép di chuyển bản đồ khi nhấn giữ phím Space
+    if (!isSpacePressed) return;
+
+    const isBackground = e.target.id === "blueprint-bg" || e.target.tagName === "svg" || e.target === canvasRef.current;
+    if (isBackground) {
+      setIsPanning(true);
+      panStartRef.current = {
+        x: e.clientX - panOffset.x,
+        y: e.clientY - panOffset.y
+      };
+      setSelectedElementId(null);
+    }
+  };
+
   const handleMouseDown = (e, nodeId) => {
     if (!isAdmin) return; // Không cho phép tài khoản khách kéo thả các nút/vật thể
+    if (isSpacePressed) return; // Khóa kéo thả thiết bị khi đang nhấn giữ phím Space để di chuyển bản đồ
     if (groupBy !== "location") return; // KHÔNG kéo thả ở chế độ phòng ban
     if (e.button !== 0) return; // Chỉ kéo thả bằng chuột trái
     e.preventDefault();
@@ -286,8 +406,8 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
-        const mouseX = ((e.clientX - rect.left) / rect.width) * 800;
-        const mouseY = ((e.clientY - rect.top) / rect.height) * 550;
+        const mouseX = (((e.clientX - rect.left) / rect.width) * 800 - panOffset.x) / zoomScale;
+        const mouseY = (((e.clientY - rect.top) / rect.height) * 550 - panOffset.y) / zoomScale;
         
         let originalX = 400;
         let originalY = 275;
@@ -313,6 +433,14 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
   };
 
   const handleMouseMove = (e) => {
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - panStartRef.current.x,
+        y: e.clientY - panStartRef.current.y
+      });
+      return;
+    }
+
     if (groupBy !== "location" || (!draggedNodeId && !draggedHandle) || !canvasRef.current) return;
 
     try {
@@ -320,8 +448,8 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
       if (rect.width <= 0 || rect.height <= 0) return;
 
       // Tính toán tọa độ chuột so với khung canvas wrapper ổn định (800x550)
-      const rawX = ((e.clientX - rect.left) / rect.width) * 800;
-      const rawY = ((e.clientY - rect.top) / rect.height) * 550;
+      const rawX = (((e.clientX - rect.left) / rect.width) * 800 - panOffset.x) / zoomScale;
+      const rawY = (((e.clientY - rect.top) / rect.height) * 550 - panOffset.y) / zoomScale;
 
       // Căn lề dựa theo lưới ô vuông (grid mesh 25px)
       const gridCellSize = 25;
@@ -483,6 +611,11 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
   };
 
   const handleMouseUp = () => {
+    if (isPanning) {
+      setIsPanning(false);
+      return;
+    }
+
     if (draggedNodeId) {
       setSelectedElementId(draggedNodeId);
     }
@@ -494,12 +627,96 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
     }, 50);
   };
 
+  // Căn chỉnh tối ưu toàn bộ sơ đồ mạng vào giữa khung nhìn (Fit to View)
+  const handleFitToView = () => {
+    const coordinates = [];
+
+    // Lấy tọa độ của tất cả các nút (máy trạm, máy chủ, hub) đang được hiển thị
+    renderedNodes.forEach(node => {
+      if (typeof node.x === "number" && typeof node.y === "number") {
+        coordinates.push({ x: node.x, y: node.y });
+      }
+    });
+
+    // Lấy tọa độ của các vật dụng văn phòng tự đặt
+    if (groupBy === "location") {
+      customElements.forEach(el => {
+        if (typeof el.x === "number" && typeof el.y === "number") {
+          coordinates.push({ x: el.x, y: el.y });
+          
+          // Nếu là tường, lấy thêm tọa độ của 2 đầu tường
+          if (el.type === "wall-h") {
+            const halfLen = ((el.size || 2) * 25) / 2;
+            coordinates.push({ x: el.x - halfLen, y: el.y });
+            coordinates.push({ x: el.x + halfLen, y: el.y });
+          } else if (el.type === "wall-v") {
+            const halfLen = ((el.size || 2) * 25) / 2;
+            coordinates.push({ x: el.x, y: el.y - halfLen });
+            coordinates.push({ x: el.x, y: el.y + halfLen });
+          }
+        }
+      });
+    }
+
+    if (coordinates.length === 0) {
+      // Nếu không có phần tử nào, khôi phục về mặc định
+      setZoomScale(1.0);
+      setPanOffset({ x: 0, y: 0 });
+      return;
+    }
+
+    // Tính toán khung giới hạn (Bounding Box)
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    coordinates.forEach(pt => {
+      if (pt.x < minX) minX = pt.x;
+      if (pt.x > maxX) maxX = pt.x;
+      if (pt.y < minY) minY = pt.y;
+      if (pt.y > maxY) maxY = pt.y;
+    });
+
+    // Thêm khoảng đệm an toàn xung quanh sơ đồ (padding) để tránh sát viền
+    const padding = 65;
+    const contentWidth = (maxX - minX) + padding * 2;
+    const contentHeight = (maxY - minY) + padding * 2;
+
+    // Kích thước của khung hiển thị mặc định
+    const viewportWidth = 800;
+    const viewportHeight = 550;
+
+    // Tính tỷ lệ zoom tối ưu
+    const scaleX = viewportWidth / contentWidth;
+    const scaleY = viewportHeight / contentHeight;
+    let optimalScale = Math.min(scaleX, scaleY);
+
+    // Giới hạn tỷ lệ zoom từ 0.5x đến 1.8x để đảm bảo mỹ quan
+    optimalScale = Math.max(0.5, Math.min(1.8, optimalScale));
+
+    // Tính toán pan offset để đưa tâm sơ đồ về đúng tâm khung nhìn
+    const contentCenterX = (minX + maxX) / 2;
+    const contentCenterY = (minY + maxY) / 2;
+
+    const viewportCenterX = viewportWidth / 2;
+    const viewportCenterY = viewportHeight / 2;
+
+    const panX = viewportCenterX - contentCenterX * optimalScale;
+    const panY = viewportCenterY - contentCenterY * optimalScale;
+
+    setZoomScale(optimalScale);
+    setPanOffset({ x: panX, y: panY });
+  };
+
   // Đặt lại sơ đồ vẽ đồng tâm gốc
   const handleResetLayout = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa tất cả vị trí và dọn sạch các vật dụng văn phòng tự sắp xếp?")) {
       setNodePositions({});
       setCustomElements([]);
       setSelectedElementId(null);
+      setZoomScale(1.0);
+      setPanOffset({ x: 0, y: 0 });
       try {
         localStorage.removeItem("netdevice_topology_positions");
         localStorage.removeItem("netdevice_topology_custom_elements");
@@ -825,8 +1042,8 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
       const rect = canvasRef.current.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         // Chuyển đổi tọa độ SVG gốc (node.x, node.y) sang pixel màn hình thực tế tương ứng tỉ lệ canvas 800x550
-        const nodeScreenX = (node.x / 800) * rect.width;
-        const nodeScreenY = (node.y / 550) * rect.height;
+        const nodeScreenX = ((panOffset.x + node.x * zoomScale) / 800) * rect.width;
+        const nodeScreenY = ((panOffset.y + node.y * zoomScale) / 550) * rect.height;
         
         setTooltipPos({
           x: nodeScreenX,
@@ -857,8 +1074,11 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
           <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
             <Network className="w-8 h-8 text-brand-500 glow-brand" /> Sơ đồ Mạng Kéo thả Tương tác
           </h2>
-          <p className="text-slate-400 text-sm mt-1">
-            Không gian phẳng phẳng lưới kỹ thuật số cho phép bạn tự do sắp xếp, kéo thả và cấu hình vị trí thực tế của thiết bị.
+          <p className="text-slate-400 text-sm mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5">
+            <span>Không gian kỹ thuật số cho phép tự do kéo thả, sắp xếp thiết bị.</span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-brand-500/10 text-brand-400 border border-brand-500/20 rounded-full text-[11px] font-bold shadow-sm animate-pulse">
+              💡 Giữ Space + Rê chuột để di chuyển bản đồ | Giữ Space + Cuộn chuột để Phóng to/Thu nhỏ
+            </span>
           </p>
         </div>
         
@@ -1152,7 +1372,17 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
         {/* Graph Display Area (3/4 width) on the right */}
         <div 
           ref={canvasRef}
-          className="xl:col-span-3 glass-panel rounded-3xl w-full aspect-[800/550] flex items-center justify-center relative overflow-hidden select-none bg-slate-950/40"
+          className={`xl:col-span-3 glass-panel relative overflow-hidden select-none flex items-center justify-center transition-all duration-300 ${
+            isFullscreen 
+              ? 'w-full h-full bg-slate-950 rounded-none' 
+              : 'w-full aspect-[800/550] bg-slate-950/40 rounded-3xl shadow-xl'
+          } ${
+            scrollZoomDirection === "in" ? "cursor-zoom-in [&_*]:!cursor-zoom-in" :
+            scrollZoomDirection === "out" ? "cursor-zoom-out [&_*]:!cursor-zoom-out" :
+            isPanning ? "cursor-grabbing [&_*]:!cursor-grabbing" :
+            isSpacePressed ? "cursor-grab [&_*]:!cursor-grab" : "cursor-default"
+          }`}
+          onMouseDown={handleContainerMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
@@ -1160,6 +1390,47 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
           {/* BACKGROUND GLOW */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-brand-500/5 rounded-full blur-[80px] pointer-events-none" />
           
+          {/* Floating Zoom Controls HUD */}
+          <div className="absolute top-4 right-4 z-30 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md border border-slate-800 p-1.5 rounded-2xl text-xs font-bold text-slate-350 shadow-2xl">
+            <span className="px-2 font-mono text-[11px] min-w-[45px] text-center text-slate-300">
+              {Math.round(zoomScale * 100)}%
+            </span>
+            <div className="h-4 w-px bg-slate-800" />
+            <button
+              type="button"
+              onClick={() => setZoomScale(prev => Math.min(3.0, prev + 0.1))}
+              className="w-7 h-7 flex items-center justify-center bg-slate-950 hover:bg-slate-800 hover:text-white rounded-xl border border-slate-850 transition-all active:scale-90 cursor-pointer text-slate-300 font-bold"
+              title="Phóng to (Space + Cuộn chuột lên)"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => setZoomScale(prev => Math.max(0.5, prev - 0.1))}
+              className="w-7 h-7 flex items-center justify-center bg-slate-950 hover:bg-slate-800 hover:text-white rounded-xl border border-slate-850 transition-all active:scale-90 cursor-pointer text-slate-300 font-bold"
+              title="Thu nhỏ (Space + Cuộn chuột xuống)"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={handleFitToView}
+              className="w-7 h-7 flex items-center justify-center bg-slate-950 hover:bg-slate-850 hover:text-white rounded-xl border border-slate-850 transition-all active:scale-90 cursor-pointer text-slate-400"
+              title="Căn giữa tối ưu sơ đồ"
+            >
+              <Focus className="w-3.5 h-3.5" />
+            </button>
+            <div className="h-4 w-px bg-slate-800" />
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="w-7 h-7 flex items-center justify-center bg-slate-950 hover:bg-slate-850 hover:text-white rounded-xl border border-slate-850 transition-all active:scale-90 cursor-pointer text-slate-400"
+              title={isFullscreen ? "Thoát toàn màn hình" : "Xem toàn màn hình"}
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
           <svg
             viewBox={`0 0 ${width} ${height}`}
             width="100%"
@@ -1194,17 +1465,18 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
               `}
             </style>
 
-            {/* 1. LỚP LƯỚI KỸ THUẬT SỐ BLUEPRINT NỀN (Chỉ hiện khi phân theo Vị trí) */}
-            {groupBy === "location" && (
+            <g transform={`translate(${panOffset.x}, ${panOffset.y}) scale(${zoomScale})`}>
+              {/* 1. LỚP LƯỚI KỸ THUẬT SỐ BLUEPRINT NỀN (Phủ vô hạn khi zoom/pan) */}
               <rect
                 id="blueprint-bg"
-                width={width}
-                height={height}
+                x="-10000"
+                y="-10000"
+                width="20000"
+                height="20000"
                 fill="url(#blueprint-grid)"
                 className="cursor-default"
                 onClick={() => setSelectedElementId(null)}
               />
-            )}
 
             {/* 2. VẼ CÁC CÁP LIÊN KẾT ĐỘNG (DÂY NỐI) */}
             <g>
@@ -1860,7 +2132,8 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
                 })}
               </g>
             )}
-          </svg>
+          </g>
+        </svg>
 
           {/* THÈ GLASSMORPHIC HIỂN THỊ CHI TIẾT HOVER (Hiện ngay cạnh thiết bị) */}
           {hoveredNode && (
