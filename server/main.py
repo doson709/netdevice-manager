@@ -1,6 +1,10 @@
 import os
 import json
 import asyncio
+from dotenv import load_dotenv
+
+# Tải cấu hình từ file .env
+load_dotenv()
 import threading
 from datetime import datetime, timedelta
 from models import vn_now
@@ -63,8 +67,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cấu hình mã khóa token bảo mật phía server (Đọc từ ENV hoặc mặc định)
-SECRET_TOKEN = os.environ.get("NETDEVICE_SECRET_TOKEN", "secure-intranet-token-123")
+# Cấu hình mã khóa token bảo mật phía server (Đọc từ ENV)
+SECRET_TOKEN = os.environ.get("NETDEVICE_SECRET_TOKEN", "")
 
 # Đăng ký các router nhánh
 app.include_router(devices.router)
