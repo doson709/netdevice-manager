@@ -56,6 +56,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     
     avg_cpu = 0.0
     avg_ram = 0.0
+    high_load_devices = []
     
     if online_ids:
         # Lấy snapshot mới nhất của mỗi máy online
@@ -66,6 +67,17 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
             ).order_by(desc(HardwareSnapshot.timestamp)).first()
             if latest:
                 usages.append((latest.cpu_usage, latest.ram_usage))
+                # Thêm vào danh sách máy quá tải nếu CPU > 80% hoặc RAM > 85%
+                if latest.cpu_usage > 80.0 or latest.ram_usage > 85.0:
+                    dev = db.query(Device).filter(Device.device_id == d_id).first()
+                    if dev:
+                        high_load_devices.append({
+                            "device_id": dev.device_id,
+                            "hostname": dev.hostname,
+                            "client_name": dev.client_name or dev.hostname,
+                            "cpu_usage": latest.cpu_usage,
+                            "ram_usage": latest.ram_usage
+                        })
                 
         if usages:
             avg_cpu = round(sum(u[0] for u in usages) / len(usages), 2)
@@ -83,15 +95,22 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         func.max(HardwareSnapshot.timestamp).label("max_ts")
     ).group_by(HardwareSnapshot.device_id).subquery()
     
-    latest_snapshots = db.query(HardwareSnapshot.id, HardwareSnapshot.device_id).join(
+    latest_snapshots = db.query(
+        HardwareSnapshot.id,
+        HardwareSnapshot.device_id,
+        HardwareSnapshot.cpu_usage,
+        HardwareSnapshot.ram_usage
+    ).join(
         latest_snapshot_subquery,
         (HardwareSnapshot.device_id == latest_snapshot_subquery.c.device_id) &
         (HardwareSnapshot.timestamp == latest_snapshot_subquery.c.max_ts)
     ).all()
     
+    snap_info = {s.id: {"device_id": s.device_id, "cpu_usage": s.cpu_usage, "ram_usage": s.ram_usage} for s in latest_snapshots}
     snap_id_to_device = {s.id: s.device_id for s in latest_snapshots}
     snap_ids = [s.id for s in latest_snapshots]
     
+    disk_distribution = []
     if snap_ids:
         high_usage_disks = db.query(DiskSnapshot).filter(
             (DiskSnapshot.snapshot_id.in_(snap_ids)) &
@@ -110,6 +129,32 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
                     "client_name": dev.client_name or dev.hostname,
                     "message": f"Ổ đĩa {d_disk.device} ({d_disk.mountpoint}) đã dùng {d_disk.usage_percent}%, còn trống {d_disk.free_gb} GB"
                 })
+
+        # Lấy thông tin dung lượng ổ đĩa của toàn bộ máy để vẽ biểu đồ giám sát tập trung
+        all_latest_disks = db.query(DiskSnapshot).filter(
+            DiskSnapshot.snapshot_id.in_(snap_ids)
+        ).all()
+        
+        for dk in all_latest_disks:
+            d_id = snap_id_to_device.get(dk.snapshot_id)
+            info = snap_info.get(dk.snapshot_id, {})
+            dev = db.query(Device).filter(Device.device_id == d_id).first()
+            if dev:
+                disk_distribution.append({
+                    "device_id": dev.device_id,
+                    "hostname": dev.hostname,
+                    "client_name": dev.client_name or dev.hostname,
+                    "cpu_usage": info.get("cpu_usage", 0.0),
+                    "ram_usage": info.get("ram_usage", 0.0),
+                    "device": dk.device,
+                    "mountpoint": dk.mountpoint,
+                    "total_gb": dk.total_gb,
+                    "used_gb": dk.used_gb,
+                    "free_gb": dk.free_gb,
+                    "usage_percent": dk.usage_percent
+                })
+        # Sắp xếp các đĩa có tỷ lệ sử dụng cao nhất lên hàng đầu
+        disk_distribution.sort(key=lambda x: x["usage_percent"], reverse=True)
 
     # Máy offline cảnh báo
     offline_devs = db.query(Device).filter(Device.is_online == False).order_by(desc(Device.last_seen)).limit(10).all()
@@ -155,7 +200,9 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         "departments": departments,
         "os_distribution": os_distribution,
         "alerts": alerts[:15], # Trả về top 15 cảnh báo mới nhất
-        "server_ips": server_ips
+        "server_ips": server_ips,
+        "disk_distribution": disk_distribution,
+        "high_load_devices": high_load_devices
     }
 
 @router.get("/server")

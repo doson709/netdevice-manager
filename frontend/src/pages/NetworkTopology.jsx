@@ -2151,13 +2151,27 @@ export default function NetworkTopology({ onNavigateToDevice, isAdmin }) {
                   }
                   return tooltipPos.x + spacing;
                 })(),
-                // Căn giữa theo chiều dọc so với tâm nút, giới hạn trong phạm vi container canvas
+                // Căn giữa theo chiều dọc so với tâm nút, giới hạn trong phạm vi container canvas & khung nhìn viewport trình duyệt
                 top: (() => {
                   if (!canvasRef.current) return 0;
                   const rect = canvasRef.current.getBoundingClientRect();
-                  const tooltipHeight = 160; // Chiều cao ước lượng của tooltip
+                  
+                  // Ước lượng chiều cao thực tế chính xác: offline là 80px, máy chủ là 230px, máy trạm online là 250px
+                  const tooltipHeight = !hoveredNode.is_online && hoveredNode.type !== "server"
+                    ? 80
+                    : (hoveredNode.type === "server" ? 230 : 250);
+                    
                   const idealTop = tooltipPos.y - tooltipHeight / 2;
-                  return Math.max(10, Math.min(rect.height - tooltipHeight - 10, idealTop));
+                  
+                  // Tính toán giới hạn theo khung nhìn viewport trình duyệt để không bị khuất khi cuộn trang
+                  const headerHeight = 64; // layout header height
+                  const viewportTopLimit = Math.max(10, headerHeight - rect.top + 10);
+                  const viewportBottomLimit = window.innerHeight - rect.top - tooltipHeight - 20;
+                  
+                  const minY = viewportTopLimit;
+                  const maxY = Math.min(rect.height - tooltipHeight - 10, viewportBottomLimit);
+                  
+                  return Math.max(minY, Math.min(maxY, idealTop));
                 })()
               }}
             >
