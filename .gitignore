@@ -36,3 +36,6 @@ agent/config.json
 *.njsproj
 *.sln
 *.sw?
+
+# Kế hoạch triển khai
+2026.05.27_ke_hoach_trien_khai_v1.md
